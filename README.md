@@ -1,0 +1,2 @@
+# fog
+a simple language
