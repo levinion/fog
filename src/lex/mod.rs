@@ -33,6 +33,8 @@ impl Lex {
             '=' => self.check_next_char('=', Token::Equal, Token::Assign),
             '"' => self.read_string(),
             ',' => Token::Comma,
+            '{' => Token::CurlyL,
+            '}' => Token::CurlyR,
             ch @ ('a'..='z' | 'A'..='Z' | '_') => self.read_name(ch),
             _ => todo!(),
         }
@@ -54,6 +56,9 @@ impl Lex {
         // parse keyword
         match &s as &str {
             "let" => Token::Let,
+            "true" => Token::Bool(true),
+            "false" => Token::Bool(false),
+            "if" => Token::If,
             _ => Token::Name(s),
         }
     }

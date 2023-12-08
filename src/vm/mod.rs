@@ -22,9 +22,9 @@ impl VM {
         }
     }
 
-    pub fn execute(&mut self, parser: Parser) {
-        for code in parser.byte_codes.iter() {
-            match *code {
+    pub fn execute(&mut self, mut parser: Parser) {
+        while let Some(code) = parser.byte_codes.pop_front() {
+            match code {
                 // take a element then get global variable, usually a function
                 ByteCode::GetGlobal => {
                     if let Value::String(s) = self.stack.pop_back().unwrap() {
@@ -67,6 +67,25 @@ impl VM {
                     let name = parser.locals.get(index).unwrap().clone();
                     self.stack
                         .push_back(self.local_table.get(&name).unwrap().clone());
+                }
+
+                ByteCode::JumpIfFalse => {
+                    let b = if let Value::Bool(b) = self.stack.pop_back().unwrap() {
+                        b
+                    } else {
+                        panic!("expected bool!")
+                    };
+                    if !b {
+                        //TODO: solve nesting blocks
+                        while parser.byte_codes[0] != ByteCode::LeaveBlock {
+                            parser.byte_codes.pop_front();
+                        }
+                        parser.byte_codes.pop_front();
+                    }
+                }
+
+                ByteCode::EnterBlock | ByteCode::LeaveBlock => {
+                    //do nothing, this is only a flag
                 }
             }
         }

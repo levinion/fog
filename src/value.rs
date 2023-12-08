@@ -6,7 +6,7 @@ pub type Args = Vec<Value>;
 pub enum Value {
     String(String),
     Fn(fn(Args) -> i32),
-    Name(String),
+    Bool(bool),
     None,
 }
 
@@ -15,8 +15,8 @@ impl Display for Value {
         match &self {
             Value::String(s) => write!(f, "{}", s),
             Value::Fn(func) => write!(f, "{:?}", func),
+            Value::Bool(b) => write!(f, "{}", b),
             Value::None => write!(f, "none"),
-            Value::Name(name) => write!(f, "name: {}", name),
         }
     }
 }

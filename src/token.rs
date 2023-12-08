@@ -9,4 +9,8 @@ pub enum Token {
     Assign,         // =
     Equal,          // ==
     Comma,          // ,
+    Bool(bool),     // true or false
+    If,             // if
+    CurlyL,         // {
+    CurlyR,         // }
 }

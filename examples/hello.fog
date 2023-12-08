@@ -9,3 +9,16 @@ println(a,b)
 a="hi"
 
 println(a)
+
+a=true
+
+println(a)
+
+if false{
+    println("should not enter this block")
+}
+
+if true{
+    println("should enter this block")
+}
+
