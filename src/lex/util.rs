@@ -1,4 +1,4 @@
-use crate::token::Token;
+use crate::core::token::Token;
 
 use super::Lex;
 use std::io::{Read, Seek};
@@ -27,20 +27,5 @@ impl Lex {
             self.put_char_back();
             other
         }
-    }
-
-    // pre-read some token, and then put them in the pre_buf.
-    fn pre_read_token(&mut self, num: usize) {
-        for _ in 0..num {
-            let token = self.next();
-            self.pre_buf.push_back(token);
-        }
-    }
-
-    // look ahead token
-    pub fn look_ahead(&mut self, num: usize) -> &Token {
-        let num = num - self.pre_buf.len();
-        self.pre_read_token(num);
-        self.pre_buf.get(num - 1).unwrap()
     }
 }

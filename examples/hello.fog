@@ -1,24 +1,4 @@
-println("hello world")
-
-let a = "hello world"
-
-let b = a
-
+let a=1.1*2.0
+let b=2.2*3.3/6.6+2.1
+a=a+b-1.0
 println(a,b)
-
-a="hi"
-
-println(a)
-
-a=true
-
-println(a)
-
-if false{
-    println("should not enter this block")
-}
-
-if true{
-    println("should enter this block")
-}
-

@@ -1,3 +1,5 @@
+use super::op::{BinaryOP, UnaryOP};
+
 #[derive(Debug, PartialEq)]
 pub enum ByteCode {
     LoadConst { index: usize }, // index of constants table
@@ -8,4 +10,6 @@ pub enum ByteCode {
     JumpIfFalse,
     EnterBlock,
     LeaveBlock,
+    UnaryOP(UnaryOP),
+    BinaryOP(BinaryOP),
 }

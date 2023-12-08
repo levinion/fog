@@ -1,6 +1,6 @@
 use std::{collections::HashMap, process::exit};
 
-use crate::value::{Args, Value};
+use crate::core::value::{Args, Value};
 
 pub fn init_global_table() -> HashMap<String, Value> {
     let mut global = HashMap::new();

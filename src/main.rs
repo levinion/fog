@@ -4,11 +4,9 @@ use lex::Lex;
 use parse::Parser;
 use vm::VM;
 
-mod bytecode;
+mod core;
 mod lex;
 mod parse;
-mod token;
-mod value;
 mod vm;
 
 fn main() {
@@ -17,10 +15,9 @@ fn main() {
         panic!("invalid arguments!")
     }
     let file = File::open(&args[1]).unwrap();
-    let lex = Lex::from(file);
-    let mut parser = Parser::from(lex);
-    parser.parse();
-    parser.debug();
+    let stream = Lex::from(file).into_token_stream();
+    let ir = Parser::from(stream).into_ir();
+    ir.debug();
     let mut vm = VM::new();
-    vm.execute(parser);
+    vm.execute(ir);
 }

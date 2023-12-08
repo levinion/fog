@@ -1,25 +1,29 @@
 mod assert;
-mod debug;
-mod op;
+pub mod ir;
+mod wrapper;
 
-use std::collections::VecDeque;
+use crate::{
+    core::{bytecode::ByteCode, token::Token, value::Value},
+    lex::token_stream::TokenStream,
+};
 
-use crate::{bytecode::ByteCode, lex::Lex, token::Token, value::Value};
+use self::ir::IR;
 
+#[derive(Debug)]
 pub struct Parser {
-    lex: Lex,
-    pub byte_codes: VecDeque<ByteCode>,
+    stream: TokenStream,
+    pub byte_codes: Vec<ByteCode>,
     pub constants: Vec<Value>,
     pub locals: Vec<String>,
 }
 
-impl From<Lex> for Parser {
-    fn from(value: Lex) -> Self {
-        let byte_codes = VecDeque::new();
+impl From<TokenStream> for Parser {
+    fn from(value: TokenStream) -> Self {
+        let byte_codes = Vec::new();
         let constants = vec![];
         let locals = vec![];
         Self {
-            lex: value,
+            stream: value,
             byte_codes,
             constants,
             locals,
@@ -28,31 +32,35 @@ impl From<Lex> for Parser {
 }
 
 impl Parser {
-    pub fn parse_once(&mut self) -> Option<Token> {
-        let token = self.lex.next();
-        match token {
-            Token::Name(name) => {
-                if self.lex.look_ahead(1) == &Token::ParL {
-                    self.call_function(name);
-                } else {
-                    self.assign_local(name);
-                }
-            }
-            Token::Let => self.define_local(),
-            Token::If => self.enter_if(),
-            Token::Eos => return Some(Token::Eos),
-            Token::CurlyR => return Some(Token::CurlyR),
-            _ => todo!(),
-        }
-        None
-    }
-
-    pub fn parse(&mut self) {
+    pub fn into_ir(mut self) -> IR {
         loop {
             if let Some(Token::Eos) = self.parse_once() {
                 break;
             }
         }
+        IR {
+            byte_codes: self.byte_codes,
+            constants: self.constants,
+            locals: self.locals,
+            pc: 0,
+        }
+    }
+
+    pub fn parse_once(&mut self) -> Option<Token> {
+        let token = self.stream.next();
+        match token {
+            Token::Name(name) => match *self.stream.look_ahead(1) {
+                Token::ParL => self.call_function(name),
+                Token::Assign => self.assign_local(name),
+                _ => {}
+            },
+            Token::Let => self.define_local(),
+            Token::If => self.enter_if(),
+            Token::Eos => return Some(Token::Eos),
+            Token::CurlyR => return Some(Token::CurlyR),
+            _ => panic!("unexpected token: {:?}", token),
+        }
+        None
     }
 
     /// call a function with name
@@ -73,7 +81,7 @@ impl Parser {
     /// define a local variable
     /// eg: let a = "hello world"
     fn define_local(&mut self) {
-        let name = if let Token::Name(s) = self.lex.next() {
+        let name = if let Token::Name(s) = self.stream.next() {
             s
         } else {
             panic!("expected name!")
@@ -112,10 +120,5 @@ impl Parser {
             }
         }
         self.leave_block();
-    }
-
-    // calulate the result of the expression
-    fn calulate_exp(&mut self) {
-        todo!()
     }
 }
