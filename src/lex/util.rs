@@ -24,15 +24,23 @@ impl Lex {
         if self.read_char() == ch {
             this
         } else {
+            self.put_char_back();
             other
         }
     }
 
     // pre-read some token, and then put them in the pre_buf.
-    pub fn pre_read_token(&mut self, num: usize) {
+    fn pre_read_token(&mut self, num: usize) {
         for _ in 0..num {
             let token = self.next();
             self.pre_buf.push_back(token);
         }
+    }
+
+    // look ahead token
+    pub fn look_ahead(&mut self, num: usize) -> &Token {
+        let num = num - self.pre_buf.len();
+        self.pre_read_token(num);
+        self.pre_buf.get(num - 1).unwrap()
     }
 }

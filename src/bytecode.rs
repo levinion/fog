@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum ByteCode {
     LoadConst { index: usize }, // index of constants table
     GetGlobal,

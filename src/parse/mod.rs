@@ -1,5 +1,7 @@
 mod assert;
-mod wrap;
+mod debug;
+mod op;
+
 use crate::{bytecode::ByteCode, lex::Lex, token::Token, value::Value};
 
 pub struct Parser {
@@ -28,7 +30,13 @@ impl Parser {
         loop {
             let token = self.lex.next();
             match token {
-                Token::Name(name) => self.call_function(name),
+                Token::Name(name) => {
+                    if self.lex.look_ahead(1) == &Token::ParL {
+                        self.call_function(name);
+                    } else {
+                        self.assign_local(name);
+                    }
+                }
                 Token::Let => self.define_local(),
                 Token::Eos => break,
                 _ => todo!(),
@@ -36,7 +44,8 @@ impl Parser {
         }
     }
 
-    /// call a function whose name is name
+    /// call a function with name
+    /// eg: println(a, b)
     fn call_function(&mut self, name: String) {
         // load function
         self.load_const(Value::String(name));
@@ -44,23 +53,30 @@ impl Parser {
         self.get_global();
         self.assert_next(Token::ParL);
         // get args
-        //TODO: try support args more than one.
-        self.load_next_exp();
+        let argc = self.load_next_exps();
         self.assert_next(Token::ParR);
         // call function
-        self.call(1);
+        self.call(argc);
     }
 
+    /// define a local variable
+    /// eg: let a = "hello world"
     fn define_local(&mut self) {
-        // get variable name
         let name = if let Token::Name(s) = self.lex.next() {
             s
         } else {
             panic!("expected name!")
         };
         self.assert_next(Token::Assign);
-        // load value to stack;
         self.load_next_exp();
         self.store_local(name);
+    }
+
+    /// assign a local variable
+    /// eg: a = "hi"
+    fn assign_local(&mut self, name: String) {
+        self.assert_next(Token::Assign);
+        self.load_next_exp();
+        self.store_local(name)
     }
 }

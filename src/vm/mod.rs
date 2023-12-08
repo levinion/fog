@@ -3,7 +3,7 @@ use std::collections::{HashMap, VecDeque};
 
 use crate::{bytecode::ByteCode, parse::Parser, value::Value};
 
-use self::func::lib_println;
+use self::func::init_global_table;
 
 pub struct VM {
     stack: VecDeque<Value>,
@@ -13,8 +13,7 @@ pub struct VM {
 
 impl VM {
     pub fn new() -> Self {
-        let mut global_table = HashMap::new();
-        global_table.insert("println".to_string(), Value::Fn(lib_println));
+        let global_table = init_global_table();
         let local_table = HashMap::new();
         Self {
             stack: VecDeque::new(),

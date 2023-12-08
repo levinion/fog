@@ -17,16 +17,15 @@ impl Parser {
     }
 
     /// load consts separated by comma
-    pub fn load_next_exps(&mut self) {
+    pub fn load_next_exps(&mut self) -> usize {
         self.load_next_exp();
-        if let Token::Comma = self.lex.next() {
-            self.load_next_exps()
-        } else {
-            //TODO: try fix it.
-
-            // self.lex.redraw();
-            todo!()
+        let mut count: usize = 1;
+        // if encounter comma, then continue read exp
+        if let &Token::Comma = self.lex.look_ahead(1) {
+            self.assert_next(Token::Comma);
+            count += self.load_next_exps();
         }
+        count
     }
 
     /// load a value to stack

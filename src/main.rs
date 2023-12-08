@@ -20,6 +20,7 @@ fn main() {
     let lex = Lex::from(file);
     let mut parser = Parser::from(lex);
     parser.parse();
+    parser.debug();
     let mut vm = VM::new();
     vm.execute(parser);
 }

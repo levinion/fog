@@ -19,6 +19,11 @@ impl From<File> for Lex {
 
 impl Lex {
     pub fn next(&mut self) -> Token {
+        // if there is some value in pre_buf, then return it.
+        if !self.pre_buf.is_empty() {
+            let token = self.pre_buf.pop_front().unwrap();
+            return token;
+        }
         let ch = self.read_char();
         match ch {
             '\0' => Token::Eos,
@@ -27,6 +32,7 @@ impl Lex {
             ')' => Token::ParR,
             '=' => self.check_next_char('=', Token::Equal, Token::Assign),
             '"' => self.read_string(),
+            ',' => Token::Comma,
             ch @ ('a'..='z' | 'A'..='Z' | '_') => self.read_name(ch),
             _ => todo!(),
         }

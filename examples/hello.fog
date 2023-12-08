@@ -4,7 +4,8 @@ let a = "hello world"
 
 let b = a
 
+println(a,b)
+
+a="hi"
+
 println(a)
-
-println(b)
-
