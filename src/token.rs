@@ -1,8 +1,12 @@
 #[derive(PartialEq, Debug)]
 pub enum Token {
-    String(String),
-    Name(String),
-    ParL,
-    ParR,
-    Eos,
+    String(String), // "string"
+    Name(String),   // constant/variable name
+    ParL,           // (
+    ParR,           // )
+    Eos,            // end of input
+    Let,            // let: define a variable
+    Assign,         // =
+    Equal,          // ==
+    Comma,          // ,
 }

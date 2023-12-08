@@ -8,7 +8,7 @@ mod bytecode;
 mod lex;
 mod parse;
 mod token;
-mod variable;
+mod value;
 mod vm;
 
 fn main() {

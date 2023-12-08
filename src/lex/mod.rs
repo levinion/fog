@@ -1,15 +1,19 @@
-use std::fs::File;
-use std::io::{Read, Seek};
+mod util;
+use std::{collections::VecDeque, fs::File};
 
 use crate::token::Token;
 
 pub struct Lex {
     input: File,
+    pre_buf: VecDeque<Token>,
 }
 
 impl From<File> for Lex {
     fn from(value: File) -> Self {
-        Self { input: value }
+        Self {
+            input: value,
+            pre_buf: VecDeque::new(),
+        }
     }
 }
 
@@ -21,6 +25,7 @@ impl Lex {
             ' ' | '\r' | '\t' | '\n' => self.next(),
             '(' => Token::ParL,
             ')' => Token::ParR,
+            '=' => self.check_next_char('=', Token::Equal, Token::Assign),
             '"' => self.read_string(),
             ch @ ('a'..='z' | 'A'..='Z' | '_') => self.read_name(ch),
             _ => todo!(),
@@ -40,7 +45,11 @@ impl Lex {
                 }
             }
         }
-        Token::Name(s)
+        // parse keyword
+        match &s as &str {
+            "let" => Token::Let,
+            _ => Token::Name(s),
+        }
     }
 
     /// read a string token from input
@@ -55,19 +64,5 @@ impl Lex {
             }
         }
         Token::String(s)
-    }
-
-    /// read a char from input
-    fn read_char(&mut self) -> char {
-        let mut buf: [u8; 1] = [0];
-        if self.input.read(&mut buf).unwrap() == 1 {
-            buf[0] as char
-        } else {
-            '\0'
-        }
-    }
-
-    fn put_char_back(&mut self) {
-        self.input.seek(std::io::SeekFrom::Current(-1)).unwrap();
     }
 }

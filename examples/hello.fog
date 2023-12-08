@@ -1,3 +1,10 @@
 println("hello world")
 
-println("I am your master!")
+let a = "hello world"
+
+let b = a
+
+println(a)
+
+println(b)
+
