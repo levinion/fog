@@ -11,6 +11,12 @@ pub enum BinaryOP {
     Sub,     // -
     Mul,     // *
     Div,     // /
+    Equal,   // ==
+    NotEq,   // !=
+    Greater, // >
+    Less,    // <
+    GreEq,   // >=
+    LesEq,   // <=
 }
 
 /// only used in parser to get final expression
@@ -22,6 +28,12 @@ pub enum InfixBinaryOP {
     Div,     // /
     ParL,    // (
     ParR,    // )
+    Equal,   // ==
+    NotEq,   // !=
+    Greater, // >
+    Less,    // <
+    GreEq,   // >=
+    LesEq,   // <=
 }
 
 impl InfixBinaryOP {
@@ -29,8 +41,7 @@ impl InfixBinaryOP {
         match *self {
             InfixBinaryOP::Add | InfixBinaryOP::Sub => 0,
             InfixBinaryOP::Mul | InfixBinaryOP::Div => 1,
-            InfixBinaryOP::ParL => -1,
-            InfixBinaryOP::ParR => 2,
+            _ => -1,
         }
     }
 }
@@ -51,6 +62,12 @@ impl From<Token> for BinaryOP {
             Token::Sub => Self::Sub,
             Token::Mul => Self::Mul,
             Token::Div => Self::Div,
+            Token::Equal => Self::Equal,
+            Token::NotEq => Self::NotEq,
+            Token::Greater => Self::Greater,
+            Token::Less => Self::Less,
+            Token::GreEq => Self::GreEq,
+            Token::LesEq => Self::LesEq,
             _ => panic!("invalid binary op!"),
         }
     }

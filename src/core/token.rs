@@ -10,7 +10,11 @@ pub enum Token {
     Let,            // let: define a variable
     Assign,         // =
     Equal,          // ==
-    NotEqual,       // !=
+    NotEq,          // !=
+    Greater,        // >
+    Less,           // <
+    GreEq,          // >=
+    LesEq,          // <=
     Comma,          // ,
     Bool(bool),     // true or false
     If,             // if
@@ -33,6 +37,12 @@ impl From<InfixBinaryOP> for Token {
             InfixBinaryOP::Sub => Token::Sub,
             InfixBinaryOP::Mul => Token::Mul,
             InfixBinaryOP::Div => Token::Div,
+            InfixBinaryOP::Equal => Token::Equal,
+            InfixBinaryOP::NotEq => Token::NotEq,
+            InfixBinaryOP::Greater => Token::Greater,
+            InfixBinaryOP::Less => Token::Less,
+            InfixBinaryOP::GreEq => Token::GreEq,
+            InfixBinaryOP::LesEq => Token::LesEq,
             op => panic!("invalid op: {op:?}"),
         }
     }

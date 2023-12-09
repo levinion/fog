@@ -9,6 +9,7 @@ impl Parser {
         let mut output_stack: Vec<Token> = Vec::new();
         let mut op_stack: VecDeque<InfixBinaryOP> = VecDeque::new();
         let mut par_count = 0; // count par pairs
+        dbg!(&output_stack, &op_stack, par_count);
         loop {
             let token = self.stream.look_ahead(1);
             match *token {
@@ -35,6 +36,36 @@ impl Parser {
                     self.stream.next();
                     self.handle_op(&mut op_stack, &mut output_stack, op);
                 }
+                Token::Equal => {
+                    let op = InfixBinaryOP::Equal;
+                    self.stream.next();
+                    self.handle_op(&mut op_stack, &mut output_stack, op);
+                }
+                Token::NotEq => {
+                    let op = InfixBinaryOP::NotEq;
+                    self.stream.next();
+                    self.handle_op(&mut op_stack, &mut output_stack, op);
+                }
+                Token::Greater => {
+                    let op = InfixBinaryOP::Greater;
+                    self.stream.next();
+                    self.handle_op(&mut op_stack, &mut output_stack, op);
+                }
+                Token::Less => {
+                    let op = InfixBinaryOP::Less;
+                    self.stream.next();
+                    self.handle_op(&mut op_stack, &mut output_stack, op);
+                }
+                Token::GreEq => {
+                    let op = InfixBinaryOP::GreEq;
+                    self.stream.next();
+                    self.handle_op(&mut op_stack, &mut output_stack, op);
+                }
+                Token::LesEq => {
+                    let op = InfixBinaryOP::LesEq;
+                    self.stream.next();
+                    self.handle_op(&mut op_stack, &mut output_stack, op);
+                }
                 Token::ParL => {
                     par_count += 1;
                     let op = InfixBinaryOP::ParL;
@@ -45,13 +76,7 @@ impl Parser {
                     par_count -= 1;
                     // exit condition: when the second ParR appears
                     if par_count < 0 {
-                        loop {
-                            let top = op_stack.pop_back();
-                            match top {
-                                Some(top) => output_stack.push(top.into()),
-                                None => break,
-                            }
-                        }
+                        clean_loop(&mut op_stack, &mut output_stack);
                         break;
                     }
                     self.stream.next();
@@ -64,18 +89,12 @@ impl Parser {
                         }
                     }
                 }
-                Token::SemiColon => {
-                    // exit condition: when semicolon appears
-                    loop {
-                        let top = op_stack.pop_back();
-                        match top {
-                            Some(top) => output_stack.push(top.into()),
-                            None => break,
-                        }
-                    }
+                Token::SemiColon | Token::CurlyL => {
+                    // exit condition: when some token appears
+                    clean_loop(&mut op_stack, &mut output_stack);
                     break;
                 }
-                _ => panic!("expected semicolon!"),
+                _ => panic!("unexpected token!"),
             }
         }
         output_stack
@@ -103,6 +122,16 @@ impl Parser {
                     break;
                 }
             }
+        }
+    }
+}
+
+fn clean_loop(op_stack: &mut VecDeque<InfixBinaryOP>, output_stack: &mut Vec<Token>) {
+    loop {
+        let top = op_stack.pop_back();
+        match top {
+            Some(top) => output_stack.push(top.into()),
+            None => break,
         }
     }
 }

@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 pub type Args = Vec<Value>;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Value {
     String(String),
     Fn(fn(Args) -> i32),

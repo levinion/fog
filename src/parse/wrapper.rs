@@ -17,6 +17,12 @@ impl Parser {
                 Token::Sub => self.auto_op(&mut op_count, Token::Sub),
                 Token::Mul => self.auto_op(&mut op_count, Token::Mul),
                 Token::Div => self.auto_op(&mut op_count, Token::Div),
+                Token::Equal => self.auto_op(&mut op_count, Token::Equal),
+                Token::NotEq => self.auto_op(&mut op_count, Token::NotEq),
+                Token::Greater => self.auto_op(&mut op_count, Token::Greater),
+                Token::Less => self.auto_op(&mut op_count, Token::Less),
+                Token::GreEq => self.auto_op(&mut op_count, Token::GreEq),
+                Token::LesEq => self.auto_op(&mut op_count, Token::LesEq),
                 Token::String(s) => {
                     self.load_const(Value::String(s));
                     op_count += 1;
@@ -111,7 +117,7 @@ impl Parser {
         self.byte_codes.push(ByteCode::LeaveBlock);
     }
 
-    pub fn auto_op(&mut self, count: &mut usize, op: Token) {
+    fn auto_op(&mut self, count: &mut usize, op: Token) {
         if *count == 1 {
             self.unary_op(op.into());
             *count -= 1;

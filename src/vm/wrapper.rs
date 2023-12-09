@@ -136,6 +136,12 @@ impl VM {
                 },
                 _ => invalid_type!(),
             },
+            BinaryOP::Equal => Value::Bool(first_value == second_value),
+            BinaryOP::NotEq => Value::Bool(first_value != second_value),
+            BinaryOP::Greater => Value::Bool(first_value > second_value),
+            BinaryOP::Less => Value::Bool(first_value < second_value),
+            BinaryOP::GreEq => Value::Bool(first_value >= second_value),
+            BinaryOP::LesEq => Value::Bool(first_value <= second_value),
         };
         self.stack.push_back(new_value);
     }
