@@ -87,6 +87,7 @@ impl Lex {
             "true" => Token::Bool(true),
             "false" => Token::Bool(false),
             "if" => Token::If,
+            "else" => Token::Else,
             _ => Token::Name(s),
         }
     }

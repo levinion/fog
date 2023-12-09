@@ -77,7 +77,11 @@ impl VM {
             UnaryOP::Sub => match value {
                 Value::Float(f) => Value::Float(-f),
                 Value::Int(i) => Value::Int(-i),
-                _ => panic!("invalid value for that op!"),
+                _ => panic!("invalid value for sub!"),
+            },
+            UnaryOP::Excl => match value {
+                Value::Bool(b) => Value::Bool(!b),
+                _ => panic!("invalid value for excl!"),
             },
         };
         self.stack.push_back(new_value);

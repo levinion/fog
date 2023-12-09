@@ -31,10 +31,10 @@ impl VM {
         while let Some(code) = ir.go_ahead() {
             match *code {
                 ByteCode::GetGlobal => self.get_global(),
-                ByteCode::LoadConst { index } => self.load_const(&mut ir, index),
-                ByteCode::CallFunction { argc } => self.call_function(argc),
-                ByteCode::StoreLocal { index } => self.store_local(&mut ir, index),
-                ByteCode::LoadLocal { index } => self.load_local(&mut ir, index),
+                ByteCode::LoadConst(index) => self.load_const(&mut ir, index),
+                ByteCode::CallFunction(argc) => self.call_function(argc),
+                ByteCode::StoreLocal(index) => self.store_local(&mut ir, index),
+                ByteCode::LoadLocal(index) => self.load_local(&mut ir, index),
                 ByteCode::JumpIfFalse => self.jump_if_false(&mut ir),
                 ByteCode::UnaryOP(op) => self.unary_op(op),
                 ByteCode::BinaryOP(op) => self.binary_op(op),

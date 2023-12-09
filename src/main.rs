@@ -1,7 +1,7 @@
-use std::{env, fs::File};
+use std::fs::File;
 
+use clap::Parser;
 use lex::Lex;
-use parse::Parser;
 use vm::VM;
 
 mod core;
@@ -9,15 +9,26 @@ mod lex;
 mod parse;
 mod vm;
 
+#[derive(clap::Parser)]
+#[command(name = "fog")]
+#[command(author = "levinion <levinnion@gmail.com>")]
+#[command(version = "0.0.1")]
+#[command(about = "A simple language", long_about = None)]
+pub struct Cli {
+    input: String,
+    #[arg(short, long)]
+    debug: bool,
+}
+
 fn main() {
-    let args: Vec<_> = env::args().collect();
-    if args.len() != 2 {
-        panic!("invalid arguments!")
-    }
-    let file = File::open(&args[1]).unwrap();
+    let cli = Cli::parse();
+
+    let file = File::open(&cli.input).unwrap();
     let stream = Lex::from(file).into_token_stream();
-    let ir = Parser::from(stream).into_ir();
-    ir.debug();
+    let ir = parse::Parser::from(stream).into_ir();
+    if cli.debug {
+        ir.debug();
+    }
     let mut vm = VM::new();
     vm.execute(ir);
 }

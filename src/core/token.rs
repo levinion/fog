@@ -18,6 +18,7 @@ pub enum Token {
     Comma,          // ,
     Bool(bool),     // true or false
     If,             // if
+    Else,           // else
     CurlyL,         // {
     CurlyR,         // }
     Int(i64),       // 1

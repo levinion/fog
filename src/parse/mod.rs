@@ -1,5 +1,6 @@
 mod assert;
-mod cal;
+mod control_flow;
+mod exp;
 pub mod ir;
 mod wrapper;
 
@@ -73,7 +74,7 @@ impl Parser {
         self.get_global();
         self.assert_next(Token::ParL);
         // get args
-        let argc = self.load_next_exps();
+        let argc = self.load_exps();
         self.assert_next(Token::ParR);
         self.assert_next(Token::SemiColon);
         // call function
@@ -89,7 +90,7 @@ impl Parser {
             panic!("expected name!")
         };
         self.assert_next(Token::Assign);
-        self.load_next_exp();
+        self.load_exp();
         self.assert_next(Token::SemiColon);
         self.store_local(name);
     }
@@ -98,31 +99,8 @@ impl Parser {
     /// eg: a = "hi";
     fn assign_local(&mut self, name: String) {
         self.assert_next(Token::Assign);
-        self.load_next_exp();
+        self.load_exp();
         self.assert_next(Token::SemiColon);
         self.store_local(name);
-    }
-
-    /// enter if block
-    /// eg: ```
-    /// if true{
-    ///     println("hello")
-    /// }```
-    fn enter_if(&mut self) {
-        self.load_next_exp();
-        self.jump_if_false();
-        self.parse_block();
-    }
-
-    /// parse statement in the block
-    fn parse_block(&mut self) {
-        self.assert_next(Token::CurlyL);
-        self.enter_block();
-        loop {
-            if let Some(Token::CurlyR) = self.parse_once() {
-                break;
-            }
-        }
-        self.leave_block();
     }
 }

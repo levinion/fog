@@ -9,7 +9,6 @@ impl Parser {
         let mut output_stack: Vec<Token> = Vec::new();
         let mut op_stack: VecDeque<InfixBinaryOP> = VecDeque::new();
         let mut par_count = 0; // count par pairs
-        dbg!(&output_stack, &op_stack, par_count);
         loop {
             let token = self.stream.look_ahead(1);
             match *token {

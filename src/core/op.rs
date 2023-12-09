@@ -1,8 +1,10 @@
+#![allow(dead_code)]
 use super::token::Token;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum UnaryOP {
     Sub = 0, // -
+    Excl,    // !
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -37,11 +39,17 @@ pub enum InfixBinaryOP {
 }
 
 impl InfixBinaryOP {
-    pub fn priority(&self) -> i8 {
+    pub fn priority(&self) -> u8 {
         match *self {
-            InfixBinaryOP::Add | InfixBinaryOP::Sub => 0,
-            InfixBinaryOP::Mul | InfixBinaryOP::Div => 1,
-            _ => -1,
+            InfixBinaryOP::Add | InfixBinaryOP::Sub => 2,
+            InfixBinaryOP::Mul | InfixBinaryOP::Div => 4,
+            InfixBinaryOP::Equal
+            | InfixBinaryOP::NotEq
+            | InfixBinaryOP::Greater
+            | InfixBinaryOP::Less
+            | InfixBinaryOP::GreEq
+            | InfixBinaryOP::LesEq => 8,
+            InfixBinaryOP::ParR | InfixBinaryOP::ParL => 1,
         }
     }
 }
