@@ -1,3 +1,5 @@
+use super::op::InfixBinaryOP;
+
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {
     String(String), // "string"
@@ -21,4 +23,17 @@ pub enum Token {
     Mul,            // *
     Div,            // /
     Excl,           // !
+    SemiColon,      // ;
+}
+
+impl From<InfixBinaryOP> for Token {
+    fn from(value: InfixBinaryOP) -> Self {
+        match value {
+            InfixBinaryOP::Add => Token::Add,
+            InfixBinaryOP::Sub => Token::Sub,
+            InfixBinaryOP::Mul => Token::Mul,
+            InfixBinaryOP::Div => Token::Div,
+            op => panic!("invalid op: {op:?}"),
+        }
+    }
 }

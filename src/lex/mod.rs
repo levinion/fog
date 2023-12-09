@@ -59,6 +59,7 @@ impl Lex {
             '-' => Token::Sub,
             '*' => Token::Mul,
             '/' => Token::Div,
+            ';' => Token::SemiColon,
             ch @ ('0'..='9' | '.') => self.read_number(ch),
             ch @ ('a'..='z' | 'A'..='Z' | '_') => self.read_name(ch),
             _ => todo!(),

@@ -1,4 +1,5 @@
 mod assert;
+mod cal;
 pub mod ir;
 mod wrapper;
 
@@ -64,7 +65,7 @@ impl Parser {
     }
 
     /// call a function with name
-    /// eg: println(a, b)
+    /// eg: println(a, b);
     fn call_function(&mut self, name: String) {
         // load function
         self.load_const(Value::String(name));
@@ -74,12 +75,13 @@ impl Parser {
         // get args
         let argc = self.load_next_exps();
         self.assert_next(Token::ParR);
+        self.assert_next(Token::SemiColon);
         // call function
         self.call(argc);
     }
 
     /// define a local variable
-    /// eg: let a = "hello world"
+    /// eg: let a = "hello world";
     fn define_local(&mut self) {
         let name = if let Token::Name(s) = self.stream.next() {
             s
@@ -88,15 +90,17 @@ impl Parser {
         };
         self.assert_next(Token::Assign);
         self.load_next_exp();
+        self.assert_next(Token::SemiColon);
         self.store_local(name);
     }
 
     /// assign a local variable
-    /// eg: a = "hi"
+    /// eg: a = "hi";
     fn assign_local(&mut self, name: String) {
         self.assert_next(Token::Assign);
         self.load_next_exp();
-        self.store_local(name)
+        self.assert_next(Token::SemiColon);
+        self.store_local(name);
     }
 
     /// enter if block

@@ -9,28 +9,32 @@ use super::Parser;
 
 impl Parser {
     pub fn load_next_exp(&mut self) {
-        self.load_next_token();
-        loop {
-            match *self.stream.look_ahead(1) {
-                Token::Add => self.binary_op(BinaryOP::Add),
-                Token::Sub => self.binary_op(BinaryOP::Sub),
-                Token::Mul => self.binary_op(BinaryOP::Mul),
-                Token::Div => self.binary_op(BinaryOP::Div),
-                _ => break,
+        let output = self.handle_infix();
+        let mut op_count: usize = 0; // count there is how many values on the stack
+        for token in output.iter() {
+            match token.clone() {
+                Token::Add => self.auto_op(&mut op_count, Token::Add),
+                Token::Sub => self.auto_op(&mut op_count, Token::Sub),
+                Token::Mul => self.auto_op(&mut op_count, Token::Mul),
+                Token::Div => self.auto_op(&mut op_count, Token::Div),
+                Token::String(s) => {
+                    self.load_const(Value::String(s));
+                    op_count += 1;
+                }
+                Token::Name(name) => {
+                    self.load_local(name);
+                    op_count += 1;
+                }
+                Token::Int(i) => {
+                    self.load_const(Value::Int(i));
+                    op_count += 1;
+                }
+                Token::Float(f) => {
+                    self.load_const(Value::Float(f));
+                    op_count += 1;
+                }
+                token => panic!("unexpected token: {:?}", token),
             }
-        }
-    }
-
-    /// load next value (constant or variable) to stack
-    pub fn load_next_token(&mut self) {
-        match self.stream.next() {
-            Token::String(s) => self.load_const(Value::String(s)),
-            Token::Name(name) => self.load_local(name),
-            Token::Bool(b) => self.load_const(Value::Bool(b)),
-            Token::Int(i) => self.load_const(Value::Int(i)),
-            Token::Float(f) => self.load_const(Value::Float(f)),
-            Token::Sub => self.unary_op(UnaryOP::Sub),
-            _ => todo!(),
         }
     }
 
@@ -87,7 +91,11 @@ impl Parser {
 
     // load local variable from the locals
     pub fn load_local(&mut self, name: String) {
-        let index = self.locals.iter().rposition(|x| *x == name).unwrap();
+        let index = self
+            .locals
+            .iter()
+            .rposition(|x| *x == name)
+            .unwrap_or_else(|| panic!("name not found: {name}"));
         self.byte_codes.push(ByteCode::LoadLocal { index });
     }
 
@@ -103,14 +111,23 @@ impl Parser {
         self.byte_codes.push(ByteCode::LeaveBlock);
     }
 
-    pub fn unary_op(&mut self, op: UnaryOP) {
-        self.load_next_token();
+    pub fn auto_op(&mut self, count: &mut usize, op: Token) {
+        if *count == 1 {
+            self.unary_op(op.into());
+            *count -= 1;
+        } else if *count >= 2 {
+            self.binary_op(op.into());
+            *count -= 1;
+        } else {
+            panic!("nothing to work!");
+        }
+    }
+
+    fn unary_op(&mut self, op: UnaryOP) {
         self.byte_codes.push(ByteCode::UnaryOP(op));
     }
 
-    pub fn binary_op(&mut self, op: BinaryOP) {
-        self.stream.next(); // op
-        self.load_next_token(); // second op number.
+    fn binary_op(&mut self, op: BinaryOP) {
         self.byte_codes.push(ByteCode::BinaryOP(op));
     }
 }
