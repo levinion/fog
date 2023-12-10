@@ -1,13 +1,35 @@
 use crate::core::{bytecode::ByteCode, value::Value};
 
-pub struct IR {
+#[derive(Debug, Clone)]
+pub enum BlockType {
+    Fn,
+    // TODO: supprot class
+    Class,
+}
+
+/// wrapper for bytecodes
+#[derive(Debug, Clone)]
+pub struct Block {
+    pub t: BlockType,
+    pub name: String,
     pub byte_codes: Vec<ByteCode>,
     pub constants: Vec<Value>,
     pub locals: Vec<String>,
     pub pc: usize,
 }
 
-impl IR {
+impl Block {
+    pub fn new(t: BlockType) -> Self {
+        Self {
+            t,
+            name: "".to_string(),
+            byte_codes: vec![],
+            constants: vec![],
+            locals: vec![],
+            pc: 0,
+        }
+    }
+
     pub fn go_ahead(&mut self) -> Option<&ByteCode> {
         let code = self.byte_codes.get(self.pc);
         self.pc += 1;
@@ -30,11 +52,5 @@ impl IR {
                 None => panic!("unexpected eos!"),
             }
         }
-    }
-
-    pub fn debug(&self) {
-        println!("{:#?}", self.byte_codes);
-        println!("{:?}", self.constants);
-        println!("{:?}", self.locals);
     }
 }

@@ -1,12 +1,12 @@
 use crate::{
+    complier::block::Block,
     core::{
         op::{BinaryOP, UnaryOP},
         value::Value,
     },
-    parse::ir::IR,
 };
 
-use super::VM;
+use super::Interpreter;
 
 macro_rules! invalid_type {
     () => {
@@ -14,7 +14,7 @@ macro_rules! invalid_type {
     };
 }
 
-impl VM {
+impl<'a> Interpreter<'a> {
     /// take a element then get global variable, usually a function
     pub fn get_global(&mut self) {
         if let Value::String(s) = self.stack.pop_back().unwrap() {
@@ -26,12 +26,12 @@ impl VM {
     }
 
     //  load a value to the stack
-    pub fn load_const(&mut self, ir: &mut IR, index: usize) {
-        self.stack.push_back(ir.constants[index].clone());
+    pub fn load_const(&mut self, block: &mut Block, index: usize) {
+        self.stack.push_back(block.constants[index].clone());
     }
 
     // take a function name constant and args, call the function.
-    pub fn call_function(&mut self, argc: usize) {
+    pub fn call_super_function(&mut self, argc: usize) {
         // collect args
         let mut args = vec![];
         for _ in 0..argc {
@@ -44,28 +44,45 @@ impl VM {
             func(args);
         }
     }
+
+    pub fn call_function(&mut self, argc: usize) {
+        // collect args
+        let mut args = vec![];
+        for _ in 0..argc {
+            args.push(self.stack.pop_back().unwrap());
+        }
+        args.reverse();
+        if let Value::String(name) = self.stack.pop_back().unwrap() {
+            let mut new_interpreter = Interpreter::new(self.ir);
+            let block = self.ir.blocks.iter().find(|b| b.name == name).unwrap();
+            new_interpreter.execute(block.clone());
+        } else {
+            panic!("invalid function name type");
+        }
+    }
+
     // take a constant, bind it with a name, then set it as a local value.
-    pub fn store_local(&mut self, ir: &mut IR, index: usize) {
+    pub fn store_local(&mut self, block: &mut Block, index: usize) {
         let value = self.stack.pop_back().unwrap();
-        let name = ir.locals.get(index).unwrap().clone();
+        let name = block.locals.get(index).unwrap().clone();
         self.local_table.insert(name, value);
     }
 
     // take a name, and load the value.
-    pub fn load_local(&mut self, ir: &mut IR, index: usize) {
-        let name = ir.locals.get(index).unwrap().clone();
+    pub fn load_local(&mut self, block: &mut Block, index: usize) {
+        let name = block.locals.get(index).unwrap().clone();
         self.stack
             .push_back(self.local_table.get(&name).unwrap().clone());
     }
 
-    pub fn jump_if_false(&mut self, ir: &mut IR) {
+    pub fn jump_if_false(&mut self, block: &mut Block) {
         let b = if let Value::Bool(b) = self.stack.pop_back().unwrap() {
             b
         } else {
             panic!("expected bool!")
         };
         if !b {
-            ir.jump_block();
+            block.jump_block();
         }
     }
 
@@ -89,10 +106,10 @@ impl VM {
 
     pub fn binary_op(&mut self, op: BinaryOP) {
         let second_value = self.stack.pop_back().unwrap();
-        let first_value = self.stack.pop_back().unwrap();
+        let fblockst_value = self.stack.pop_back().unwrap();
 
         let new_value = match op {
-            BinaryOP::Add => match first_value {
+            BinaryOP::Add => match fblockst_value {
                 Value::Float(f1) => match second_value {
                     Value::Float(f2) => Value::Float(f1 + f2),
                     _ => invalid_type!(),
@@ -107,7 +124,7 @@ impl VM {
                 },
                 _ => invalid_type!(),
             },
-            BinaryOP::Sub => match first_value {
+            BinaryOP::Sub => match fblockst_value {
                 Value::Float(f1) => match second_value {
                     Value::Float(f2) => Value::Float(f1 - f2),
                     _ => invalid_type!(),
@@ -118,7 +135,7 @@ impl VM {
                 },
                 _ => invalid_type!(),
             },
-            BinaryOP::Mul => match first_value {
+            BinaryOP::Mul => match fblockst_value {
                 Value::Float(f1) => match second_value {
                     Value::Float(f2) => Value::Float(f1 * f2),
                     _ => invalid_type!(),
@@ -129,7 +146,7 @@ impl VM {
                 },
                 _ => invalid_type!(),
             },
-            BinaryOP::Div => match first_value {
+            BinaryOP::Div => match fblockst_value {
                 Value::Float(f1) => match second_value {
                     Value::Float(f2) => Value::Float(f1 / f2),
                     _ => invalid_type!(),
@@ -140,12 +157,12 @@ impl VM {
                 },
                 _ => invalid_type!(),
             },
-            BinaryOP::Equal => Value::Bool(first_value == second_value),
-            BinaryOP::NotEq => Value::Bool(first_value != second_value),
-            BinaryOP::Greater => Value::Bool(first_value > second_value),
-            BinaryOP::Less => Value::Bool(first_value < second_value),
-            BinaryOP::GreEq => Value::Bool(first_value >= second_value),
-            BinaryOP::LesEq => Value::Bool(first_value <= second_value),
+            BinaryOP::Equal => Value::Bool(fblockst_value == second_value),
+            BinaryOP::NotEq => Value::Bool(fblockst_value != second_value),
+            BinaryOP::Greater => Value::Bool(fblockst_value > second_value),
+            BinaryOP::Less => Value::Bool(fblockst_value < second_value),
+            BinaryOP::GreEq => Value::Bool(fblockst_value >= second_value),
+            BinaryOP::LesEq => Value::Bool(fblockst_value <= second_value),
         };
         self.stack.push_back(new_value);
     }

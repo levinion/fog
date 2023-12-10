@@ -1,12 +1,10 @@
 use std::fs::File;
 
 use clap::Parser;
-use lex::Lex;
 use vm::VM;
 
+mod complier;
 mod core;
-mod lex;
-mod parse;
 mod vm;
 
 #[derive(clap::Parser)]
@@ -22,12 +20,12 @@ pub struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-
     let file = File::open(&cli.input).unwrap();
-    let stream = Lex::from(file).into_token_stream();
-    let ir = parse::Parser::from(stream).into_ir();
+    let ir = complier::Complier::complie(file);
     if cli.debug {
-        ir.debug();
+        for block in &ir.blocks {
+            println!("{:#?}", block);
+        }
     }
     let mut vm = VM::new();
     vm.execute(ir);

@@ -62,6 +62,7 @@ impl Lex {
             '*' => Token::Mul,
             '/' => Token::Div,
             ';' => Token::SemiColon,
+            '@' => Token::At,
             ch @ ('0'..='9' | '.') => self.read_number(ch),
             ch @ ('a'..='z' | 'A'..='Z' | '_') => self.read_name(ch),
             _ => todo!(),
@@ -88,6 +89,7 @@ impl Lex {
             "false" => Token::Bool(false),
             "if" => Token::If,
             "else" => Token::Else,
+            "fn" => Token::Fn,
             _ => Token::Name(s),
         }
     }
