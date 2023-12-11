@@ -36,6 +36,11 @@ impl Parser {
         block.byte_codes.push(ByteCode::CallFunction(argc));
     }
 
+    // take the function and args then call it.
+    pub fn call_fog(&mut self, block: &mut Block, argc: usize) {
+        block.byte_codes.push(ByteCode::CallFogFunction(argc));
+    }
+
     // store the name to locals and return its index
     pub fn store_local(&mut self, block: &mut Block, name: String) {
         // if there exists the value, then just return it.

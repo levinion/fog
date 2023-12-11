@@ -18,7 +18,8 @@ pub struct Cli {
     debug: bool,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
     let file = File::open(&cli.input).unwrap();
     let ir = complier::Complier::complie(file);
@@ -27,6 +28,6 @@ fn main() {
             println!("{:#?}", block);
         }
     }
-    let mut vm = VM::new();
-    vm.execute(ir);
+    let mut vm = VM::new(ir);
+    vm.execute().await;
 }

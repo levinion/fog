@@ -16,11 +16,18 @@ use super::{
 #[derive(Debug)]
 pub struct Parser {
     stream: TokenStream,
+    block: Block, // file block
 }
 
 impl From<TokenStream> for Parser {
     fn from(value: TokenStream) -> Self {
-        Self { stream: value }
+        let mut block = Block::new(BlockType::File);
+        // TODO: Get Filename
+        block.name = "filename".into();
+        Self {
+            stream: value,
+            block,
+        }
     }
 }
 
@@ -36,7 +43,7 @@ impl Parser {
             let token = self.stream.next();
             match token {
                 Token::Fn => {
-                    let mut block = Block::new(BlockType::Fn);
+                    let mut block = Block::inherite(&self.block, BlockType::Fn);
                     let name = if let Token::Name(name) = self.stream.next() {
                         name
                     } else {
@@ -69,6 +76,7 @@ impl Parser {
                 Token::Let => self.define_local(block),
                 Token::At => self.call_super_function(block),
                 Token::If => self.enter_if(block),
+                Token::Fog => self.call_fog_function(block),
                 Token::Eos => panic!("eos!"),
                 Token::CurlyR => break,
                 _ => panic!("unexpected token: {:?}", token),
@@ -109,6 +117,22 @@ impl Parser {
         self.assert_next(Token::SemiColon);
         // call function
         self.call(block, argc);
+    }
+
+    fn call_fog_function(&mut self, block: &mut Block) {
+        let name = if let Token::Name(name) = self.stream.next() {
+            name
+        } else {
+            panic!("expected some function name!");
+        };
+        self.load_const(block, Value::String(name));
+        self.assert_next(Token::ParL);
+        // get args
+        let argc = self.load_exps(block);
+        self.assert_next(Token::ParR);
+        self.assert_next(Token::SemiColon);
+        // call function
+        self.call_fog(block, argc);
     }
 
     /// define a local variable

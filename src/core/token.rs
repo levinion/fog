@@ -31,6 +31,7 @@ pub enum Token {
     SemiColon,      // ;
     Fn,             // fn
     At,             // @
+    Fog,            // fog
 }
 
 impl From<InfixBinaryOP> for Token {

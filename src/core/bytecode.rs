@@ -6,6 +6,7 @@ pub enum ByteCode {
     GetGlobal,
     CallSuperFunction(usize), // the number of args that function takes
     CallFunction(usize),
+    CallFogFunction(usize),
     StoreLocal(usize), // index of locals list
     LoadLocal(usize),  // index of locals list
     JumpIfFalse,

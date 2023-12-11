@@ -2,6 +2,7 @@ use crate::core::{bytecode::ByteCode, value::Value};
 
 #[derive(Debug, Clone)]
 pub enum BlockType {
+    File,
     Fn,
     // TODO: supprot class
     Class,
@@ -26,6 +27,17 @@ impl Block {
             byte_codes: vec![],
             constants: vec![],
             locals: vec![],
+            pc: 0,
+        }
+    }
+
+    pub fn inherite(block: &Block, t: BlockType) -> Self {
+        Self {
+            t,
+            name: "".to_string(),
+            byte_codes: block.byte_codes.clone(),
+            constants: block.constants.clone(),
+            locals: block.locals.clone(),
             pc: 0,
         }
     }

@@ -75,7 +75,7 @@ impl Lex {
         loop {
             let ch = self.read_char();
             match ch {
-                'a'..='z' | 'A'..='Z' | '_' => s.push(ch),
+                'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => s.push(ch),
                 _ => {
                     self.put_char_back();
                     break;
@@ -90,6 +90,7 @@ impl Lex {
             "if" => Token::If,
             "else" => Token::Else,
             "fn" => Token::Fn,
+            "fog" => Token::Fog,
             _ => Token::Name(s),
         }
     }
