@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use interpreter::Interpreter;
 
-use crate::complier::{block::Block, ir::IR};
+use crate::core::{block::Block, ir::IR};
 
 pub struct VM {
     block_table: Arc<HashMap<String, Block>>,

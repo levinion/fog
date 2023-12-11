@@ -4,7 +4,7 @@ use super::op::{BinaryOP, UnaryOP};
 pub enum ByteCode {
     LoadConst(usize), // index of constants table
     GetGlobal,
-    CallSuperFunction(usize), // the number of args that function takes
+    CallMetaFunction(usize), // the number of args that function takes
     CallFunction(usize),
     CallFogFunction(usize),
     StoreLocal(usize), // index of locals list

@@ -6,12 +6,12 @@ use crate::core::token::Token;
 
 use self::token_stream::TokenStream;
 
-pub struct Lex {
+pub struct Lexer {
     input: File,
     pre_read_token: Option<Token>,
 }
 
-impl From<File> for Lex {
+impl From<File> for Lexer {
     fn from(value: File) -> Self {
         Self {
             input: value,
@@ -20,7 +20,7 @@ impl From<File> for Lex {
     }
 }
 
-impl Lex {
+impl Lexer {
     pub fn into_token_stream(mut self) -> TokenStream {
         let mut tokens: Vec<Token> = Vec::new();
         loop {

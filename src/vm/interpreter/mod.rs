@@ -1,14 +1,13 @@
-mod func;
+mod exec;
+mod meta;
+mod op;
 mod wrapper;
 
 use std::collections::{HashMap, VecDeque};
 
-use crate::{
-    complier::block::Block,
-    core::{bytecode::ByteCode, value::Value},
-};
+use crate::core::{block::Block, bytecode::ByteCode, value::Value};
 
-use self::func::init_global_table;
+use self::meta::init_global_table;
 
 pub struct Interpreter<'a> {
     stack: VecDeque<Value>,
@@ -35,7 +34,7 @@ impl<'a> Interpreter<'a> {
             match *code {
                 ByteCode::GetGlobal => self.get_global(),
                 ByteCode::LoadConst(index) => self.load_const(&mut block, index),
-                ByteCode::CallSuperFunction(argc) => self.call_super_function(argc),
+                ByteCode::CallMetaFunction(argc) => self.call_meta_function(argc),
                 ByteCode::CallFogFunction(argc) => self.call_fog_function(argc).await,
                 ByteCode::CallFunction(argc) => self.call_function(argc).await,
                 ByteCode::StoreLocal(index) => self.store_local(&mut block, index),

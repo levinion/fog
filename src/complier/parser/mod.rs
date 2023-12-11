@@ -4,13 +4,13 @@ mod exp;
 mod wrapper;
 
 use crate::{
-    complier::lex::token_stream::TokenStream,
-    core::{token::Token, value::Value},
-};
-
-use super::{
-    block::{Block, BlockType},
-    ir::IR,
+    complier::lexer::token_stream::TokenStream,
+    core::{
+        block::{Block, BlockType},
+        ir::IR,
+        token::Token,
+        value::Value,
+    },
 };
 
 #[derive(Debug)]

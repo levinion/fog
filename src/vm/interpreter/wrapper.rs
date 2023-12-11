@@ -1,18 +1,6 @@
-use crate::{
-    complier::block::Block,
-    core::{
-        op::{BinaryOP, UnaryOP},
-        value::Value,
-    },
-};
+use crate::core::{block::Block, value::Value};
 
 use super::Interpreter;
-
-macro_rules! invalid_type {
-    () => {
-        panic!("invalid type!")
-    };
-}
 
 impl<'a> Interpreter<'a> {
     /// take a element then get global variable, usually a function
@@ -28,57 +16,6 @@ impl<'a> Interpreter<'a> {
     //  load a value to the stack
     pub fn load_const(&mut self, block: &mut Block, index: usize) {
         self.stack.push_back(block.constants[index].clone());
-    }
-
-    // take a function name constant and args, call the function.
-    pub fn call_super_function(&mut self, argc: usize) {
-        // collect args
-        let mut args = vec![];
-        for _ in 0..argc {
-            args.push(self.stack.pop_back().unwrap());
-        }
-        args.reverse();
-
-        // get function
-        if let Value::Fn(func) = self.stack.pop_back().unwrap() {
-            func(args);
-        }
-    }
-
-    // take a function name constant and args, call the function.
-    pub async fn call_fog_function(&mut self, argc: usize) {
-        // collect args
-        let mut args = vec![];
-        for _ in 0..argc {
-            args.push(self.stack.pop_back().unwrap());
-        }
-        args.reverse();
-        if let Value::String(name) = self.stack.pop_back().unwrap() {
-            let block = self.block_table.get(&name).unwrap().clone();
-            let block_table = self.block_table.clone();
-            tokio::spawn(async move {
-                let mut new_interpreter = Interpreter::new(&block_table);
-                new_interpreter.execute(block).await;
-            });
-        } else {
-            panic!("invalid function name type");
-        }
-    }
-
-    pub async fn call_function(&mut self, argc: usize) {
-        // collect args
-        let mut args = vec![];
-        for _ in 0..argc {
-            args.push(self.stack.pop_back().unwrap());
-        }
-        args.reverse();
-        if let Value::String(name) = self.stack.pop_back().unwrap() {
-            let mut new_interpreter = Interpreter::new(self.block_table);
-            let block = self.block_table.get(&name).unwrap();
-            new_interpreter.execute(block.clone()).await;
-        } else {
-            panic!("invalid function name type");
-        }
     }
 
     // take a constant, bind it with a name, then set it as a local value.
@@ -104,86 +41,5 @@ impl<'a> Interpreter<'a> {
         if !b {
             block.jump_block();
         }
-    }
-
-    // take a stack value, push it back to stack after some operation
-    pub fn unary_op(&mut self, op: UnaryOP) {
-        let value = self.stack.pop_back().unwrap();
-        let new_value = match op {
-            // -
-            UnaryOP::Sub => match value {
-                Value::Float(f) => Value::Float(-f),
-                Value::Int(i) => Value::Int(-i),
-                _ => panic!("invalid value for sub!"),
-            },
-            UnaryOP::Excl => match value {
-                Value::Bool(b) => Value::Bool(!b),
-                _ => panic!("invalid value for excl!"),
-            },
-        };
-        self.stack.push_back(new_value);
-    }
-
-    pub fn binary_op(&mut self, op: BinaryOP) {
-        let second_value = self.stack.pop_back().unwrap();
-        let fblockst_value = self.stack.pop_back().unwrap();
-
-        let new_value = match op {
-            BinaryOP::Add => match fblockst_value {
-                Value::Float(f1) => match second_value {
-                    Value::Float(f2) => Value::Float(f1 + f2),
-                    _ => invalid_type!(),
-                },
-                Value::Int(i1) => match second_value {
-                    Value::Int(i2) => Value::Int(i1 + i2),
-                    _ => invalid_type!(),
-                },
-                Value::String(s1) => match second_value {
-                    Value::String(s2) => Value::String(s1 + s2.as_str()),
-                    _ => invalid_type!(),
-                },
-                _ => invalid_type!(),
-            },
-            BinaryOP::Sub => match fblockst_value {
-                Value::Float(f1) => match second_value {
-                    Value::Float(f2) => Value::Float(f1 - f2),
-                    _ => invalid_type!(),
-                },
-                Value::Int(i1) => match second_value {
-                    Value::Int(i2) => Value::Int(i1 - i2),
-                    _ => invalid_type!(),
-                },
-                _ => invalid_type!(),
-            },
-            BinaryOP::Mul => match fblockst_value {
-                Value::Float(f1) => match second_value {
-                    Value::Float(f2) => Value::Float(f1 * f2),
-                    _ => invalid_type!(),
-                },
-                Value::Int(i1) => match second_value {
-                    Value::Int(i2) => Value::Int(i1 * i2),
-                    _ => invalid_type!(),
-                },
-                _ => invalid_type!(),
-            },
-            BinaryOP::Div => match fblockst_value {
-                Value::Float(f1) => match second_value {
-                    Value::Float(f2) => Value::Float(f1 / f2),
-                    _ => invalid_type!(),
-                },
-                Value::Int(i1) => match second_value {
-                    Value::Int(i2) => Value::Int(i1 / i2),
-                    _ => invalid_type!(),
-                },
-                _ => invalid_type!(),
-            },
-            BinaryOP::Equal => Value::Bool(fblockst_value == second_value),
-            BinaryOP::NotEq => Value::Bool(fblockst_value != second_value),
-            BinaryOP::Greater => Value::Bool(fblockst_value > second_value),
-            BinaryOP::Less => Value::Bool(fblockst_value < second_value),
-            BinaryOP::GreEq => Value::Bool(fblockst_value >= second_value),
-            BinaryOP::LesEq => Value::Bool(fblockst_value <= second_value),
-        };
-        self.stack.push_back(new_value);
     }
 }

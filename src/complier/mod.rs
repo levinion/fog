@@ -1,16 +1,16 @@
-pub mod block;
-pub mod ir;
-mod lex;
-mod parse;
+mod lexer;
+mod parser;
 
-use self::{ir::IR, lex::Lex, parse::Parser};
+use crate::core::ir::IR;
+
+use self::{lexer::Lexer, parser::Parser};
 use std::fs::File;
 
 pub struct Complier {}
 
 impl Complier {
     pub fn complie(input: File) -> IR {
-        let stream = Lex::from(input).into_token_stream();
+        let stream = Lexer::from(input).into_token_stream();
         Parser::from(stream).into_ir()
     }
 }

@@ -1,7 +1,4 @@
-use crate::{
-    complier::block::Block,
-    core::{bytecode::ByteCode, value::Value},
-};
+use crate::core::{block::Block, bytecode::ByteCode, value::Value};
 
 use super::Parser;
 
@@ -28,7 +25,7 @@ impl Parser {
 
     // take the function and args then call it.
     pub fn call_super(&mut self, block: &mut Block, argc: usize) {
-        block.byte_codes.push(ByteCode::CallSuperFunction(argc));
+        block.byte_codes.push(ByteCode::CallMetaFunction(argc));
     }
 
     // take the function and args then call it.
