@@ -1,4 +1,4 @@
-use crate::core::block::Block;
+use crate::core::{block::Block, token::Token};
 
 use super::Parser;
 
@@ -9,6 +9,7 @@ impl Parser {
     ///     println("hello")
     /// }```
     pub fn enter_if(&mut self, block: &mut Block) {
+        self.assert_next(Token::If);
         self.load_exp(block);
         self.jump_if_false(block);
         self.parse_block(block);

@@ -7,7 +7,6 @@ use crate::{
     complier::lexer::token_stream::TokenStream,
     core::{
         block::{Block, BlockType},
-        ir::IR,
         token::Token,
         value::Value,
     },
@@ -16,63 +15,89 @@ use crate::{
 #[derive(Debug)]
 pub struct Parser {
     stream: TokenStream,
-    block: Block, // file block
 }
 
 impl From<TokenStream> for Parser {
     fn from(value: TokenStream) -> Self {
-        let mut block = Block::new(BlockType::File);
-        // TODO: Get Filename
-        block.name = "filename".into();
-        Self {
-            stream: value,
-            block,
-        }
+        Self { stream: value }
     }
 }
 
 impl Parser {
-    pub fn into_ir(mut self) -> IR {
-        self.parse_blocks().into()
-    }
-
-    /// parse the file to blocks
-    pub fn parse_blocks(&mut self) -> Vec<Block> {
-        let mut blocks = vec![];
+    /// parse all file to a block
+    pub fn parse_file(&mut self, name: String) -> Block {
+        // TODO: Get Filename
+        let mut block = Block::new(name, BlockType::File, vec![]);
         loop {
-            let token = self.stream.next();
+            let token = self.stream.look_ahead(1);
             match token {
-                Token::Fn => {
-                    let mut block = Block::inherite(&self.block, BlockType::Fn);
-                    let name = if let Token::Name(name) = self.stream.next() {
-                        name
-                    } else {
-                        panic!("expected name!");
-                    };
-                    block.name = name;
-                    self.assert_next(Token::ParL);
-                    self.assert_next(Token::ParR);
-                    self.parse_curly_pair(&mut block);
-                    blocks.push(block);
-                }
+                Token::Name(name) => self.handle_name(&mut block, name.clone()),
+                // let a = 1;
+                Token::Let => self.define_local(&mut block),
+                // @println(...);
+                Token::At => self.call_super_function(&mut block),
+                // if a > 0 {...}
+                Token::If => self.enter_if(&mut block),
+                // fog call(...);
+                Token::Fog => self.call_fog_function(&mut block),
+                // fn main(...)
+                Token::Fn => self.parse_blocks(&mut block),
                 Token::Eos => break,
-                _ => panic!("invalid block"),
+                _ => panic!("unexpected token: {:?}", token),
             }
         }
-        blocks
+        block
+    }
+
+    /// parse blocks
+    // eg: fn test(a, b){...}
+    pub fn parse_blocks(&mut self, father: &mut Block) {
+        let token = self.stream.look_ahead(1);
+        match token {
+            // eg: fn test(a,b){do something here}
+            Token::Fn => {
+                self.stream.next();
+                let name = if let Token::Name(name) = self.stream.next() {
+                    name
+                } else {
+                    panic!("expected name!");
+                };
+                let args = self.parse_fn_args_to_vec();
+                let mut block = Block::inherite(father, name, BlockType::Fn, args);
+                self.parse_curly_pair(&mut block);
+                father.add_sub_block(block);
+            }
+            token => panic!("invalid block! found token: {token:?}"),
+        }
+    }
+
+    // eg: fn test(a,b){} -> get ["a","b"]
+    fn parse_fn_args_to_vec(&mut self) -> Vec<String> {
+        let mut args = vec![];
+        self.assert_next(Token::ParL);
+        loop {
+            let token = self.stream.look_ahead(1);
+            match token {
+                Token::Name(name) => {
+                    args.push(name.clone());
+                    self.stream.next();
+                }
+                Token::ParR => break,
+                Token::Comma => self.assert_next(Token::Comma),
+                _ => panic!("invalid token!"),
+            }
+        }
+        self.assert_next(Token::ParR);
+        args
     }
 
     // parse a block until meet CurlyR
     fn parse_curly_pair(&mut self, block: &mut Block) {
         self.assert_next(Token::CurlyL);
         loop {
-            let token = self.stream.next();
+            let token = self.stream.look_ahead(1);
             match token {
-                Token::Name(name) => match *self.stream.look_ahead(1) {
-                    Token::ParL => self.call_function(block, name),
-                    Token::Assign => self.assign_local(block, name),
-                    _ => panic!("not supported now!"),
-                },
+                Token::Name(name) => self.handle_name(block, name.clone()),
                 Token::Let => self.define_local(block),
                 Token::At => self.call_super_function(block),
                 Token::If => self.enter_if(block),
@@ -82,11 +107,23 @@ impl Parser {
                 _ => panic!("unexpected token: {:?}", token),
             }
         }
+        self.assert_next(Token::CurlyR);
+    }
+
+    fn handle_name(&mut self, block: &mut Block, name: String) {
+        let name = name.clone();
+        self.stream.next();
+        match *self.stream.look_ahead(1) {
+            Token::ParL => self.call_function(block, name),
+            Token::Assign => self.assign_local(block, name),
+            _ => panic!("not supported now!"),
+        }
     }
 
     /// call super function with name
     /// eg: @print(a, b);
     fn call_super_function(&mut self, block: &mut Block) {
+        self.assert_next(Token::At);
         let name = if let Token::Name(name) = self.stream.next() {
             name
         } else {
@@ -119,7 +156,9 @@ impl Parser {
         self.call(block, argc);
     }
 
+    // eg: fog test(a);
     fn call_fog_function(&mut self, block: &mut Block) {
+        self.assert_next(Token::Fog);
         let name = if let Token::Name(name) = self.stream.next() {
             name
         } else {
@@ -138,6 +177,7 @@ impl Parser {
     /// define a local variable
     /// eg: let a = "hello world";
     fn define_local(&mut self, block: &mut Block) {
+        self.assert_next(Token::Let);
         let name = if let Token::Name(s) = self.stream.next() {
             s
         } else {

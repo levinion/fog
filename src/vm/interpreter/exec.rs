@@ -1,17 +1,11 @@
-use crate::core::value::Value;
+use crate::core::value::{Args, Value};
 
 use super::Interpreter;
 
 impl Interpreter {
     // take a function name constant and args, call the function.
     pub fn call_meta_function(&mut self, argc: usize) {
-        // collect args
-        let mut args = vec![];
-        for _ in 0..argc {
-            args.push(self.stack.pop_back().unwrap());
-        }
-        args.reverse();
-
+        let args = self.collect_args(argc);
         // get function
         if let Value::Fn(func) = self.stack.pop_back().unwrap() {
             func(args);
@@ -19,38 +13,32 @@ impl Interpreter {
     }
 
     // take a function name constant and args, call the function.
+    // argc: args number that to be load
     pub async fn call_fog_function(&mut self, argc: usize) {
-        // collect args
-        let mut args = vec![];
-        for _ in 0..argc {
-            args.push(self.stack.pop_back().unwrap());
-        }
-        args.reverse();
+        let args = self.collect_args(argc);
         if let Value::String(name) = self.stack.pop_back().unwrap() {
-            let block = self.block_table.get(&name).unwrap().clone();
-            let block_table = self.block_table.clone();
-            tokio::spawn(async move {
-                let mut new_interpreter = Interpreter::new(block_table);
-                new_interpreter.execute(block).await;
-            });
+            self.manager.par_exec(&name, args).await;
         } else {
             panic!("invalid function name type");
         }
     }
 
     pub async fn call_function(&mut self, argc: usize) {
+        let args = self.collect_args(argc);
+        if let Value::String(name) = self.stack.pop_back().unwrap() {
+            self.manager.exec(&name, args).await;
+        } else {
+            panic!("invalid function name type");
+        }
+    }
+
+    fn collect_args(&mut self, argc: usize) -> Args {
         // collect args
         let mut args = vec![];
         for _ in 0..argc {
             args.push(self.stack.pop_back().unwrap());
         }
         args.reverse();
-        if let Value::String(name) = self.stack.pop_back().unwrap() {
-            let mut new_interpreter = Interpreter::new(self.block_table.clone());
-            let block = self.block_table.get(&name).unwrap();
-            new_interpreter.execute(block.clone()).await;
-        } else {
-            panic!("invalid function name type");
-        }
+        args
     }
 }

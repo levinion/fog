@@ -1,24 +1,20 @@
 mod interpreter;
-use std::{collections::HashMap, sync::Arc};
-
-use interpreter::Interpreter;
-
-use crate::core::{block::Block, ir::IR};
+mod manager;
+use self::manager::Manager;
+use crate::core::ir::IR;
 
 pub struct VM {
-    block_table: Arc<HashMap<String, Block>>,
+    manager: Manager,
 }
 
 impl VM {
     pub fn new(ir: IR) -> Self {
         Self {
-            block_table: Arc::new(ir.into()),
+            manager: Manager::new(ir),
         }
     }
 
     pub async fn execute(&mut self) {
-        let mut itpt = Interpreter::new(self.block_table.clone());
-        let main_block = self.block_table.get("main").unwrap();
-        itpt.execute(main_block.clone()).await;
+        self.manager.exec("main::main", vec![]).await;
     }
 }

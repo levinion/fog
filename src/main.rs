@@ -1,5 +1,3 @@
-use std::fs::File;
-
 use clap::Parser;
 use vm::VM;
 
@@ -21,8 +19,7 @@ pub struct Cli {
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
-    let file = File::open(&cli.input).unwrap();
-    let ir = complier::Complier::complie(file);
+    let ir = complier::Complier::complie(&cli.input);
     if cli.debug {
         for block in &ir.blocks {
             println!("{:#?}", block);

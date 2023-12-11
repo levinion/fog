@@ -76,6 +76,14 @@ impl Lexer {
             let ch = self.read_char();
             match ch {
                 'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => s.push(ch),
+                ':' => {
+                    let next = self.read_char();
+                    if next == ':' {
+                        s.push_str("::");
+                    } else {
+                        panic!("unsupported char :");
+                    }
+                }
                 _ => {
                     self.put_char_back();
                     break;

@@ -13,33 +13,43 @@ pub enum BlockType {
 pub struct Block {
     pub t: BlockType,
     pub name: String,
+    pub args: Vec<String>,
     pub byte_codes: Vec<ByteCode>,
     pub constants: Vec<Value>,
     pub locals: Vec<String>,
+    pub sub_blocks: Vec<Block>,
     pub pc: usize,
 }
 
 impl Block {
-    pub fn new(t: BlockType) -> Self {
+    pub fn new(name: String, t: BlockType, args: Vec<String>) -> Self {
         Self {
             t,
-            name: "".to_string(),
+            name,
+            args,
             byte_codes: vec![],
             constants: vec![],
             locals: vec![],
+            sub_blocks: vec![],
             pc: 0,
         }
     }
 
-    pub fn inherite(block: &Block, t: BlockType) -> Self {
+    pub fn inherite(father: &Block, name: String, t: BlockType, args: Vec<String>) -> Self {
         Self {
             t,
-            name: "".to_string(),
-            byte_codes: block.byte_codes.clone(),
-            constants: block.constants.clone(),
-            locals: block.locals.clone(),
+            name: father.name.clone() + "::" + &name,
+            args,
+            byte_codes: father.byte_codes.clone(),
+            constants: father.constants.clone(),
+            locals: father.locals.clone(),
+            sub_blocks: vec![],
             pc: 0,
         }
+    }
+
+    pub fn add_sub_block(&mut self, block: Block) {
+        self.sub_blocks.push(block);
     }
 
     pub fn go_ahead(&mut self) -> Option<&ByteCode> {

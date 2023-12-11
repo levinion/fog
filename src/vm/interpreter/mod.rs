@@ -3,36 +3,50 @@ mod meta;
 mod op;
 mod wrapper;
 
-use std::{
-    collections::{HashMap, VecDeque},
-    sync::Arc,
-};
+use std::collections::{HashMap, VecDeque};
 
-use crate::core::{block::Block, bytecode::ByteCode, value::Value};
+use crate::core::{
+    block::Block,
+    bytecode::ByteCode,
+    value::{Args, Value},
+};
 
 use self::meta::init_global_table;
 
+use super::manager::Manager;
+
+/// An Interpreter is an instance that executes a block.
 pub struct Interpreter {
     stack: VecDeque<Value>,
     global_table: HashMap<String, Value>,
     local_table: HashMap<String, Value>,
-    block_table: Arc<HashMap<String, Block>>,
+    manager: Manager,
 }
 
 impl Interpreter {
-    pub fn new(block_table: Arc<HashMap<String, Block>>) -> Self {
+    pub fn new(manager: Manager) -> Self {
         let global_table = init_global_table();
         let local_table = HashMap::new();
         Self {
             stack: VecDeque::new(),
             global_table,
             local_table,
-            block_table,
+            manager,
         }
     }
 
     #[async_recursion::async_recursion]
-    pub async fn execute(&mut self, mut block: Block) {
+    // args: args read by caller
+    pub async fn execute(&mut self, mut block: Block, args: Args) {
+        // handle args here
+        block
+            .args
+            .iter()
+            .zip(args.into_iter())
+            .for_each(|(name, arg)| {
+                self.local_table.insert(name.clone(), arg);
+            });
+
         while let Some(code) = block.go_ahead() {
             match *code {
                 ByteCode::GetGlobal => self.get_global(),
