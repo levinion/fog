@@ -11,7 +11,7 @@ macro_rules! invalid_type {
     };
 }
 
-impl<'a> Interpreter<'a> {
+impl Interpreter {
     // take a stack value, push it back to stack after some operation
     pub fn unary_op(&mut self, op: UnaryOP) {
         let value = self.stack.pop_back().unwrap();

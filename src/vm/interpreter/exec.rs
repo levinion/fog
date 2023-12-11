@@ -2,7 +2,7 @@ use crate::core::value::Value;
 
 use super::Interpreter;
 
-impl<'a> Interpreter<'a> {
+impl Interpreter {
     // take a function name constant and args, call the function.
     pub fn call_meta_function(&mut self, argc: usize) {
         // collect args
@@ -30,7 +30,7 @@ impl<'a> Interpreter<'a> {
             let block = self.block_table.get(&name).unwrap().clone();
             let block_table = self.block_table.clone();
             tokio::spawn(async move {
-                let mut new_interpreter = Interpreter::new(&block_table);
+                let mut new_interpreter = Interpreter::new(block_table);
                 new_interpreter.execute(block).await;
             });
         } else {
@@ -46,7 +46,7 @@ impl<'a> Interpreter<'a> {
         }
         args.reverse();
         if let Value::String(name) = self.stack.pop_back().unwrap() {
-            let mut new_interpreter = Interpreter::new(self.block_table);
+            let mut new_interpreter = Interpreter::new(self.block_table.clone());
             let block = self.block_table.get(&name).unwrap();
             new_interpreter.execute(block.clone()).await;
         } else {

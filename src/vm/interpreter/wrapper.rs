@@ -2,7 +2,7 @@ use crate::core::{block::Block, value::Value};
 
 use super::Interpreter;
 
-impl<'a> Interpreter<'a> {
+impl Interpreter {
     /// take a element then get global variable, usually a function
     pub fn get_global(&mut self) {
         if let Value::String(s) = self.stack.pop_back().unwrap() {

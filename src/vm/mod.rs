@@ -17,7 +17,7 @@ impl VM {
     }
 
     pub async fn execute(&mut self) {
-        let mut itpt = Interpreter::new(&self.block_table);
+        let mut itpt = Interpreter::new(self.block_table.clone());
         let main_block = self.block_table.get("main").unwrap();
         itpt.execute(main_block.clone()).await;
     }

@@ -3,21 +3,24 @@ mod meta;
 mod op;
 mod wrapper;
 
-use std::collections::{HashMap, VecDeque};
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+};
 
 use crate::core::{block::Block, bytecode::ByteCode, value::Value};
 
 use self::meta::init_global_table;
 
-pub struct Interpreter<'a> {
+pub struct Interpreter {
     stack: VecDeque<Value>,
     global_table: HashMap<String, Value>,
     local_table: HashMap<String, Value>,
-    block_table: &'a HashMap<String, Block>,
+    block_table: Arc<HashMap<String, Block>>,
 }
 
-impl<'a> Interpreter<'a> {
-    pub fn new(block_table: &'a HashMap<String, Block>) -> Self {
+impl Interpreter {
+    pub fn new(block_table: Arc<HashMap<String, Block>>) -> Self {
         let global_table = init_global_table();
         let local_table = HashMap::new();
         Self {
