@@ -2,7 +2,8 @@ use crate::core::{bytecode::ByteCode, value::Value};
 
 #[derive(Debug, Clone)]
 pub enum BlockType {
-    File,
+    Module, // dir
+    File,   // file
     Fn,
     // TODO: supprot class
     Class,
@@ -14,6 +15,7 @@ pub struct Block {
     pub t: BlockType,
     pub name: String,
     pub args: Vec<String>,
+    pub namespaces: Vec<String>,
     pub byte_codes: Vec<ByteCode>,
     pub constants: Vec<Value>,
     pub locals: Vec<String>,
@@ -23,10 +25,12 @@ pub struct Block {
 
 impl Block {
     pub fn new(name: String, t: BlockType, args: Vec<String>) -> Self {
+        let namespaces = vec!["main".to_string()];
         Self {
             t,
             name,
             args,
+            namespaces,
             byte_codes: vec![],
             constants: vec![],
             locals: vec![],
@@ -38,8 +42,9 @@ impl Block {
     pub fn inherite(father: &Block, name: String, t: BlockType, args: Vec<String>) -> Self {
         Self {
             t,
-            name: father.name.clone() + "::" + &name,
+            name,
             args,
+            namespaces: vec![],
             byte_codes: father.byte_codes.clone(),
             constants: father.constants.clone(),
             locals: father.locals.clone(),

@@ -1,30 +1,32 @@
 use clap::Parser;
+use cli::Commands;
 use vm::VM;
 
+mod builder;
+mod cli;
 mod complier;
 mod core;
 mod vm;
 
-#[derive(clap::Parser)]
-#[command(name = "fog")]
-#[command(author = "levinion <levinnion@gmail.com>")]
-#[command(version = "0.0.1")]
-#[command(about = "A simple language", long_about = None)]
-pub struct Cli {
-    input: String,
-    #[arg(short, long)]
-    debug: bool,
-}
-
 #[tokio::main]
 async fn main() {
-    let cli = Cli::parse();
-    let ir = complier::Complier::complie(&cli.input);
-    if cli.debug {
-        for block in &ir.blocks {
-            println!("{:#?}", block);
+    let fog = cli::Cli::parse();
+    match &fog.commands {
+        Commands::Run { file, debug } => {
+            let ir = if let Some(file) = file {
+                complier::complie_file(file).into()
+            } else {
+                complier::complie("src")
+            };
+            if *debug {
+                println!("{:#?}", ir.blocks.clone());
+            }
+            let mut vm = VM::new(ir);
+            vm.execute().await;
+        }
+        Commands::New { name } => {
+            let builder = builder::Builder::new();
+            builder.init_project(name);
         }
     }
-    let mut vm = VM::new(ir);
-    vm.execute().await;
 }

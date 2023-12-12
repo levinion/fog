@@ -62,8 +62,9 @@ impl Parser {
                 } else {
                     panic!("expected name!");
                 };
-                let args = self.parse_fn_args_to_vec();
-                let mut block = Block::inherite(father, name, BlockType::Fn, args);
+                let mut args = self.parse_fn_args_to_vec();
+                let mut block = Block::inherite(father, name, BlockType::Fn, args.clone());
+                block.locals.append(&mut args);
                 self.parse_curly_pair(&mut block);
                 father.add_sub_block(block);
             }

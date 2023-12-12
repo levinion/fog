@@ -15,6 +15,6 @@ impl VM {
     }
 
     pub async fn execute(&mut self) {
-        self.manager.exec("main::main", vec![]).await;
+        self.manager.exec("src::main::main", vec![]).await;
     }
 }

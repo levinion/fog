@@ -28,13 +28,17 @@ impl Manager {
     }
 
     // get block by name
-    // name -> main::name -> ?
+    // self::name -> main::name -> ?
+    // walk the block tree from bottom to top
+    // TODO: fix namespace
     pub fn get_block_by_name(&self, name: &str) -> Block {
         self.0
             .get(name)
             .unwrap_or_else(|| {
-                let name = "main::".to_string() + name;
-                self.0.get(&name).unwrap()
+                let name = "".to_string() + name;
+                self.0
+                    .get(&name)
+                    .unwrap_or_else(|| panic!("name not found: {name}"))
             })
             .clone()
     }
