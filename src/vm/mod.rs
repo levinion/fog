@@ -1,7 +1,7 @@
 mod interpreter;
 mod manager;
 use self::manager::Manager;
-use crate::core::ir::IR;
+use crate::core::{ir::IR, namespace::NameSpace};
 
 pub struct VM {
     manager: Manager,
@@ -15,6 +15,8 @@ impl VM {
     }
 
     pub async fn execute(&mut self) {
-        self.manager.exec("src::main::main", vec![]).await;
+        self.manager
+            .exec("main::main", vec![], NameSpace::new("main"))
+            .await;
     }
 }

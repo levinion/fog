@@ -14,7 +14,7 @@ async fn main() {
     match &fog.commands {
         Commands::Run { file, debug } => {
             let ir = if let Some(file) = file {
-                complier::complie_file(file).into()
+                complier::complie_file(file, None).into()
             } else {
                 complier::complie("src")
             };
@@ -25,8 +25,7 @@ async fn main() {
             vm.execute().await;
         }
         Commands::New { name } => {
-            let builder = builder::Builder::new();
-            builder.init_project(name);
+            builder::init_project(name);
         }
     }
 }

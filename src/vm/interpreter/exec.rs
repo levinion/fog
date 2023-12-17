@@ -1,4 +1,7 @@
-use crate::core::value::{Args, Value};
+use crate::core::{
+    block::Block,
+    value::{Args, Value},
+};
 
 use super::Interpreter;
 
@@ -14,19 +17,19 @@ impl Interpreter {
 
     // take a function name constant and args, call the function.
     // argc: args number that to be load
-    pub async fn call_fog_function(&mut self, argc: usize) {
+    pub async fn call_fog_function(&mut self, block: &Block, argc: usize) {
         let args = self.collect_args(argc);
         if let Value::String(name) = self.stack.pop_back().unwrap() {
-            self.manager.par_exec(&name, args).await;
+            self.manager.par_exec(&name, args, block.namespace()).await;
         } else {
             panic!("invalid function name type");
         }
     }
 
-    pub async fn call_function(&mut self, argc: usize) {
+    pub async fn call_function(&mut self, block: &Block, argc: usize) {
         let args = self.collect_args(argc);
         if let Value::String(name) = self.stack.pop_back().unwrap() {
-            self.manager.exec(&name, args).await;
+            self.manager.exec(&name, args, block.namespace()).await;
         } else {
             panic!("invalid function name type");
         }

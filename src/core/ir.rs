@@ -37,23 +37,17 @@ impl From<Block> for IR {
 impl From<IR> for HashMap<String, Block> {
     fn from(value: IR) -> Self {
         let mut map = HashMap::new();
-        walk_blocks(&mut map, value.blocks, "".into());
+        build_blocks(&mut map, &value.blocks);
         map
     }
 }
 
-fn walk_blocks(map: &mut HashMap<String, Block>, blocks: Vec<Block>, father_name: String) {
+fn build_blocks(map: &mut HashMap<String, Block>, blocks: &[Block]) {
     if blocks.is_empty() {
         return;
     }
     for block in blocks {
-        let new_name = if father_name.is_empty() {
-            block.name.clone()
-        } else {
-            father_name.clone() + "::" + &block.name
-        };
-        walk_blocks(map, block.sub_blocks.clone(), new_name.clone());
-        // dbg!(new_name.clone());
-        map.insert(new_name.clone(), block.clone());
+        map.insert(block.full_name.clone(), block.clone());
+        build_blocks(map, &block.sub_blocks);
     }
 }

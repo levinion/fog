@@ -25,9 +25,12 @@ impl From<TokenStream> for Parser {
 
 impl Parser {
     /// parse all file to a block
-    pub fn parse_file(&mut self, name: String) -> Block {
-        // TODO: Get Filename
-        let mut block = Block::new(name, BlockType::File, vec![]);
+    pub fn parse_file(&mut self, name: String, father: Option<&Block>) -> Block {
+        let mut block = if let Some(father) = father {
+            Block::inherite(father, name, BlockType::File, vec![])
+        } else {
+            Block::new(name, BlockType::File, vec![])
+        };
         loop {
             let token = self.stream.look_ahead(1);
             match token {

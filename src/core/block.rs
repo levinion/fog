@@ -1,12 +1,14 @@
 use crate::core::{bytecode::ByteCode, value::Value};
 
+use super::namespace::NameSpace;
+
 #[derive(Debug, Clone)]
 pub enum BlockType {
     Module, // dir
     File,   // file
     Fn,
     // TODO: supprot class
-    Class,
+    // Class,
 }
 
 /// wrapper for bytecodes
@@ -14,8 +16,8 @@ pub enum BlockType {
 pub struct Block {
     pub t: BlockType,
     pub name: String,
+    pub full_name: String,
     pub args: Vec<String>,
-    pub namespaces: Vec<String>,
     pub byte_codes: Vec<ByteCode>,
     pub constants: Vec<Value>,
     pub locals: Vec<String>,
@@ -24,13 +26,13 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn new(name: String, t: BlockType, args: Vec<String>) -> Self {
-        let namespaces = vec!["main".to_string()];
+    pub fn new(full_name: String, t: BlockType, args: Vec<String>) -> Self {
+        let name = full_name.split("::").last().unwrap();
         Self {
             t,
-            name,
+            name: name.into(),
+            full_name,
             args,
-            namespaces,
             byte_codes: vec![],
             constants: vec![],
             locals: vec![],
@@ -40,17 +42,23 @@ impl Block {
     }
 
     pub fn inherite(father: &Block, name: String, t: BlockType, args: Vec<String>) -> Self {
+        let full_name = father.full_name.clone() + "::" + &name;
+        dbg!(&full_name);
         Self {
             t,
             name,
+            full_name,
             args,
-            namespaces: vec![],
             byte_codes: father.byte_codes.clone(),
             constants: father.constants.clone(),
             locals: father.locals.clone(),
             sub_blocks: vec![],
             pc: 0,
         }
+    }
+
+    pub fn namespace(&self) -> NameSpace {
+        NameSpace::new(self.full_name.clone()).get_super()
     }
 
     pub fn add_sub_block(&mut self, block: Block) {
