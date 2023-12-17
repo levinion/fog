@@ -43,7 +43,6 @@ impl Block {
 
     pub fn inherite(father: &Block, name: String, t: BlockType, args: Vec<String>) -> Self {
         let full_name = father.full_name.clone() + "::" + &name;
-        dbg!(&full_name);
         Self {
             t,
             name,

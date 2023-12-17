@@ -1,12 +1,20 @@
 use clap::Parser;
 use cli::Commands;
+use config::Config;
+use lazy_static::lazy_static;
 use vm::VM;
 
 mod builder;
 mod cli;
 mod complier;
+mod config;
 mod core;
 mod vm;
+
+lazy_static! {
+    #[derive(Debug)]
+    static ref CONFIGURE: Config = Config::init();
+}
 
 #[tokio::main]
 async fn main() {
