@@ -7,7 +7,7 @@ use crate::{builder, complier, core::ir::IR, vm::VM, CONFIGURE};
 pub async fn run(file: &Option<String>, debug: &bool) -> Result<()> {
     let ir: IR = if let Some(file) = file {
         // If file path is given, then complie the single file. Not support now.
-        complier::complie_file(file, None).into()
+        complier::complie_file(file, None)?.into()
     } else {
         // If frog file exists, parse it as ir. Or complie the project.
         let frog = get_frog_path();

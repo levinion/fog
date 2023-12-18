@@ -111,6 +111,14 @@ impl Lexer {
             match ch {
                 '"' => break,
                 '\0' => panic!("invalid string!"),
+                '\\' => {
+                    let ch = self.read_char();
+                    match ch {
+                        'n' => s.push('\n'),
+                        't' => s.push('\t'),
+                        _ => self.put_char_back(),
+                    }
+                }
                 _ => s.push(ch),
             }
         }
