@@ -14,6 +14,7 @@ pub enum BlockType {
 /// wrapper for bytecodes
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Block {
+    #[serde(rename = "type")]
     pub t: BlockType,
     pub name: String,
     pub full_name: String,
@@ -22,6 +23,7 @@ pub struct Block {
     pub constants: Vec<Value>,
     pub locals: Vec<String>,
     pub sub_blocks: Vec<Block>,
+    #[serde(skip_serializing)]
     pub pc: usize,
 }
 
