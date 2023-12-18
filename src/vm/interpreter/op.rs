@@ -1,3 +1,5 @@
+use anyhow::{anyhow, Result};
+
 use crate::core::{
     op::{BinaryOP, UnaryOP},
     value::Value,
@@ -7,30 +9,31 @@ use super::Interpreter;
 
 macro_rules! invalid_type {
     () => {
-        panic!("invalid type!")
+        return Err(anyhow!("invalid type!"))
     };
 }
 
 impl Interpreter {
     // take a stack value, push it back to stack after some operation
-    pub fn unary_op(&mut self, op: UnaryOP) {
+    pub fn unary_op(&mut self, op: UnaryOP) -> Result<()> {
         let value = self.stack.pop_back().unwrap();
         let new_value = match op {
             // -
             UnaryOP::Sub => match value {
                 Value::Float(f) => Value::Float(-f),
                 Value::Int(i) => Value::Int(-i),
-                _ => panic!("invalid value for sub!"),
+                _ => return Err(anyhow!("invalid value for sub!")),
             },
             UnaryOP::Excl => match value {
                 Value::Bool(b) => Value::Bool(!b),
-                _ => panic!("invalid value for excl!"),
+                _ => return Err(anyhow!("invalid value for excl!")),
             },
         };
         self.stack.push_back(new_value);
+        Ok(())
     }
 
-    pub fn binary_op(&mut self, op: BinaryOP) {
+    pub fn binary_op(&mut self, op: BinaryOP) -> Result<()> {
         let second_value = self.stack.pop_back().unwrap();
         let fblockst_value = self.stack.pop_back().unwrap();
 
@@ -91,5 +94,6 @@ impl Interpreter {
             BinaryOP::LesEq => Value::Bool(fblockst_value <= second_value),
         };
         self.stack.push_back(new_value);
+        Ok(())
     }
 }

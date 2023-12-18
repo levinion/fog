@@ -23,7 +23,8 @@ pub struct Block {
     pub constants: Vec<Value>,
     pub locals: Vec<String>,
     pub sub_blocks: Vec<Block>,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
+    #[serde(default)]
     pub pc: usize,
 }
 

@@ -1,3 +1,5 @@
+use anyhow::{anyhow, Result};
+
 use crate::core::{
     block::Block,
     value::{Args, MetaFunc, Value},
@@ -10,7 +12,7 @@ use super::{
 
 impl Interpreter {
     // take a function name constant and args, call the function.
-    pub fn call_meta_function(&mut self, argc: usize) {
+    pub fn call_meta_function(&mut self, argc: usize) -> Result<()> {
         let args = self.collect_args(argc);
         // get function
         if let Value::MetaFunc(func) = self.stack.pop_back().unwrap() {
@@ -20,26 +22,31 @@ impl Interpreter {
                 MetaFunc::Exit => lib_exit(args),
             };
         }
+        Ok(())
     }
 
     // take a function name constant and args, call the function.
     // argc: args number that to be load
-    pub async fn call_fog_function(&mut self, block: &Block, argc: usize) {
+    pub async fn call_fog_function(&mut self, block: &Block, argc: usize) -> Result<()> {
         let args = self.collect_args(argc);
         if let Value::String(name) = self.stack.pop_back().unwrap() {
-            self.manager.par_exec(&name, args, block.namespace()).await;
+            self.manager
+                .par_exec(&name, args, block.namespace())
+                .await?;
         } else {
-            panic!("invalid function name type");
+            return Err(anyhow!("invalid function name type"));
         }
+        Ok(())
     }
 
-    pub async fn call_function(&mut self, block: &Block, argc: usize) {
+    pub async fn call_function(&mut self, block: &Block, argc: usize) -> Result<()> {
         let args = self.collect_args(argc);
         if let Value::String(name) = self.stack.pop_back().unwrap() {
-            self.manager.exec(&name, args, block.namespace()).await;
+            self.manager.exec(&name, args, block.namespace()).await?;
         } else {
-            panic!("invalid function name type");
+            return Err(anyhow!("invalid function name type"));
         }
+        Ok(())
     }
 
     fn collect_args(&mut self, argc: usize) -> Args {
