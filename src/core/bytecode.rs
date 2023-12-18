@@ -1,6 +1,6 @@
 use super::op::{BinaryOP, UnaryOP};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
 pub enum ByteCode {
     LoadConst(usize), // index of constants table
     GetGlobal,

@@ -2,7 +2,7 @@ use crate::core::{bytecode::ByteCode, value::Value};
 
 use super::namespace::NameSpace;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum BlockType {
     Module, // dir
     File,   // file
@@ -12,7 +12,7 @@ pub enum BlockType {
 }
 
 /// wrapper for bytecodes
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Block {
     pub t: BlockType,
     pub name: String,

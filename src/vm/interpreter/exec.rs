@@ -1,17 +1,24 @@
 use crate::core::{
     block::Block,
-    value::{Args, Value},
+    value::{Args, MetaFunc, Value},
 };
 
-use super::Interpreter;
+use super::{
+    meta::{lib_exit, lib_print, lib_println},
+    Interpreter,
+};
 
 impl Interpreter {
     // take a function name constant and args, call the function.
     pub fn call_meta_function(&mut self, argc: usize) {
         let args = self.collect_args(argc);
         // get function
-        if let Value::Fn(func) = self.stack.pop_back().unwrap() {
-            func(args);
+        if let Value::MetaFunc(func) = self.stack.pop_back().unwrap() {
+            match func {
+                MetaFunc::Println => lib_println(args),
+                MetaFunc::Print => lib_print(args),
+                MetaFunc::Exit => lib_exit(args),
+            };
         }
     }
 

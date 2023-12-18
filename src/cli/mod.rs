@@ -1,3 +1,7 @@
+mod cmd;
+
+use clap::Parser;
+
 #[derive(clap::Parser)]
 #[command(name = "fog")]
 #[command(author = "levinion <levinnion@gmail.com>")]
@@ -18,4 +22,14 @@ pub enum Commands {
     New {
         name: String,
     },
+    Build,
+}
+
+pub async fn run() {
+    let fog = Cli::parse();
+    match &fog.commands {
+        Commands::Run { file, debug } => cmd::run(file, debug).await,
+        Commands::New { name } => cmd::new(name),
+        Commands::Build => cmd::build(),
+    }
 }

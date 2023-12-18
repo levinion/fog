@@ -1,43 +1,40 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::File, io::Write, path::PathBuf};
+
+use crate::CONFIGURE;
 
 use super::block::Block;
 
-#[derive(Default)]
-pub struct IR {
-    pub blocks: Vec<Block>,
-}
+#[derive(Default, serde::Serialize, serde::Deserialize)]
+pub struct IR(Vec<Block>);
 
 impl IR {
-    pub fn new() -> Self {
-        Self {
-            ..Default::default()
-        }
-    }
-
-    pub fn import(mut self, block: Block) -> Self {
-        self.blocks.push(block);
-        self
+    pub fn build(&self) {
+        let bin = PathBuf::from("bin");
+        std::fs::create_dir_all(bin.as_path()).unwrap();
+        let name = CONFIGURE.config.name.clone() + ".frog";
+        let path = bin.join(name);
+        let mut file = File::create(path).unwrap();
+        file.write_all(&bincode::serialize(&self.0).unwrap())
+            .unwrap();
     }
 }
 
 impl From<Vec<Block>> for IR {
     fn from(value: Vec<Block>) -> Self {
-        Self { blocks: value }
+        Self(value)
     }
 }
 
 impl From<Block> for IR {
     fn from(value: Block) -> Self {
-        Self {
-            blocks: vec![value],
-        }
+        Self(vec![value])
     }
 }
 
 impl From<IR> for HashMap<String, Block> {
     fn from(value: IR) -> Self {
         let mut map = HashMap::new();
-        build_blocks(&mut map, &value.blocks);
+        build_blocks(&mut map, &value.0);
         map
     }
 }
