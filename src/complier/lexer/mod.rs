@@ -63,7 +63,8 @@ impl Lexer {
             '/' => Token::Div,
             ';' => Token::SemiColon,
             '@' => Token::At,
-            ch @ ('0'..='9' | '.') => self.read_number(ch),
+            '.' => Token::Dot,
+            ch @ ('0'..='9') => self.read_number(ch),
             ch @ ('a'..='z' | 'A'..='Z' | '_') => self.read_name(ch),
             _ => todo!(),
         }

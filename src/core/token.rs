@@ -32,6 +32,7 @@ pub enum Token {
     Fn,             // fn
     At,             // @
     Fog,            // fog
+    Dot,            // .
 }
 
 impl From<InfixBinaryOP> for Token {
@@ -49,5 +50,15 @@ impl From<InfixBinaryOP> for Token {
             InfixBinaryOP::LesEq => Token::LesEq,
             op => panic!("invalid op: {op:?}"),
         }
+    }
+}
+
+pub trait IsMeta {
+    fn is_meta(&self) -> bool;
+}
+
+impl IsMeta for String {
+    fn is_meta(&self) -> bool {
+        self.starts_with('@')
     }
 }

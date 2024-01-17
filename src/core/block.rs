@@ -1,6 +1,6 @@
 use crate::core::{bytecode::ByteCode, value::Value};
 
-use super::namespace::NameSpace;
+use super::{bytecode::Decorate, namespace::NameSpace};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum BlockType {
@@ -73,18 +73,25 @@ impl Block {
         code
     }
 
+    pub fn reset_pc(&mut self) {
+        self.pc = 0;
+    }
+
     pub fn jump_block(&mut self) {
         let mut count = 0;
         loop {
             let code = self.go_ahead();
             match code {
-                Some(&ByteCode::EnterBlock) => count += 1,
-                Some(&ByteCode::LeaveBlock) => {
-                    count -= 1;
-                    if count == 0 {
-                        break;
+                Some(&ByteCode::Decorate(decorate)) => match Decorate::from(decorate) {
+                    Decorate::EnterBlock => count += 1,
+                    Decorate::LeaveBlock => {
+                        count -= 1;
+                        if count == 0 {
+                            break;
+                        }
                     }
-                }
+                    Decorate::Fog => {}
+                },
                 Some(_) => {}
                 None => panic!("unexpected eos!"),
             }

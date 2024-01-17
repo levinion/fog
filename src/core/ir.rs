@@ -1,8 +1,6 @@
-use std::{collections::HashMap, fs::File, io::Write, path::PathBuf};
+use std::collections::HashMap;
 
-use anyhow::Result;
-
-use crate::CONFIGURE;
+use crate::complier::optimizer;
 
 use super::block::Block;
 
@@ -10,14 +8,8 @@ use super::block::Block;
 pub struct IR(Vec<Block>);
 
 impl IR {
-    pub fn build(&self) -> Result<()> {
-        let bin = PathBuf::from("bin");
-        std::fs::create_dir_all(bin.as_path())?;
-        let name = CONFIGURE.config.name.clone() + ".frog";
-        let path = bin.join(name);
-        let mut file = File::create(path)?;
-        file.write_all(&bincode::serialize(&self)?)?;
-        Ok(())
+    pub fn optimize(self) -> HashMap<String, Block> {
+        optimizer::optimize(self)
     }
 }
 

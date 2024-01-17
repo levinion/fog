@@ -1,4 +1,5 @@
 mod lexer;
+pub mod optimizer;
 mod parser;
 
 use anyhow::{Context, Result};

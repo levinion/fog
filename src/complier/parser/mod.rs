@@ -7,6 +7,7 @@ use crate::{
     complier::lexer::token_stream::TokenStream,
     core::{
         block::{Block, BlockType},
+        bytecode::{Decorate, FunctionType},
         token::Token,
         value::Value,
     },
@@ -37,12 +38,6 @@ impl Parser {
                 Token::Name(name) => self.handle_name(&mut block, name.clone()),
                 // let a = 1;
                 Token::Let => self.define_local(&mut block),
-                // @println(...);
-                Token::At => self.call_super_function(&mut block),
-                // if a > 0 {...}
-                Token::If => self.enter_if(&mut block),
-                // fog call(...);
-                Token::Fog => self.call_fog_function(&mut block),
                 // fn main(...)
                 Token::Fn => self.parse_blocks(&mut block),
                 Token::Eos => break,
@@ -75,7 +70,9 @@ impl Parser {
         }
     }
 
-    // eg: fn test(a,b){} -> get ["a","b"]
+    /// This function is used by parse_blocks.
+    /// It should not be used in other position.
+    /// eg: fn test(a,b){...} -> get \["a","b"\]
     fn parse_fn_args_to_vec(&mut self) -> Vec<String> {
         let mut args = vec![];
         self.assert_next(Token::ParL);
@@ -95,7 +92,11 @@ impl Parser {
         args
     }
 
-    // parse a block until meet CurlyR
+    /// This function is used by parse_blocks.
+    /// It should not be used in other position.
+    /// Parse a block until meet CurlyR.
+    /// This is the true function that handle the logic.
+    /// eg: {...}
     fn parse_curly_pair(&mut self, block: &mut Block) {
         self.assert_next(Token::CurlyL);
         loop {
@@ -103,9 +104,9 @@ impl Parser {
             match token {
                 Token::Name(name) => self.handle_name(block, name.clone()),
                 Token::Let => self.define_local(block),
-                Token::At => self.call_super_function(block),
+                Token::ParL => self.call_function(block),
                 Token::If => self.enter_if(block),
-                Token::Fog => self.call_fog_function(block),
+                Token::Fog => self.handle_fog(block),
                 Token::Eos => panic!("eos!"),
                 Token::CurlyR => break,
                 _ => panic!("unexpected token: {:?}", token),
@@ -114,68 +115,49 @@ impl Parser {
         self.assert_next(Token::CurlyR);
     }
 
+    // when meets the name, then load it to the stack. Then we can handle it later.
     fn handle_name(&mut self, block: &mut Block, name: String) {
-        let name = name.clone();
         self.stream.next();
-        match *self.stream.look_ahead(1) {
-            Token::ParL => self.call_function(block, name),
-            Token::Assign => self.assign_local(block, name),
-            _ => panic!("not supported now!"),
-        }
+        let value = Value::String(name);
+        // add argument name to constants table and then load it to stack
+        wrapper::load_const(block, value);
     }
 
-    /// call super function with name
-    /// eg: @print(a, b);
-    fn call_super_function(&mut self, block: &mut Block) {
-        self.assert_next(Token::At);
-        let name = if let Token::Name(name) = self.stream.next() {
-            name
-        } else {
-            panic!("expected some super function name!");
-        };
-        // load function
-        self.load_const(block, Value::String(name));
-        // get the function from global and load to the stack
-        self.get_global(block);
-        self.assert_next(Token::ParL);
-        // get args
-        let argc = self.load_exps(block);
-        self.assert_next(Token::ParR);
-        self.assert_next(Token::SemiColon);
-        // call function
-        self.call_super(block, argc);
+    fn handle_fog(&mut self, block: &mut Block) {
+        self.stream.next();
+        wrapper::decorate(block, Decorate::Fog);
     }
 
     /// call normal function with name
     /// eg: print(a, b);
-    fn call_function(&mut self, block: &mut Block, name: String) {
-        // load function
-        self.load_const(block, Value::String(name));
+    fn call_function(&mut self, block: &mut Block) {
         self.assert_next(Token::ParL);
         // get args
         let argc = self.load_exps(block);
         self.assert_next(Token::ParR);
         self.assert_next(Token::SemiColon);
         // call function
-        self.call(block, argc);
+        wrapper::call_function(block, argc, FunctionType::Undefined);
     }
 
-    // eg: fog test(a);
-    fn call_fog_function(&mut self, block: &mut Block) {
-        self.assert_next(Token::Fog);
+    // eg: value.method(exps);
+    fn call_method(&mut self, block: &mut Block, name: String) {
+        // get value
+        wrapper::load_local(block, name);
+        self.assert_next(Token::Dot);
+        // get method name
         let name = if let Token::Name(name) = self.stream.next() {
             name
         } else {
             panic!("expected some function name!");
         };
-        self.load_const(block, Value::String(name));
+        wrapper::load_const(block, Value::String(name));
         self.assert_next(Token::ParL);
         // get args
         let argc = self.load_exps(block);
         self.assert_next(Token::ParR);
         self.assert_next(Token::SemiColon);
-        // call function
-        self.call_fog(block, argc);
+        wrapper::call_method(block, argc);
     }
 
     /// define a local variable
@@ -190,7 +172,7 @@ impl Parser {
         self.assert_next(Token::Assign);
         self.load_exp(block);
         self.assert_next(Token::SemiColon);
-        self.store_local(block, name);
+        wrapper::store_local(block, name);
     }
 
     /// assign a local variable
@@ -199,6 +181,6 @@ impl Parser {
         self.assert_next(Token::Assign);
         self.load_exp(block);
         self.assert_next(Token::SemiColon);
-        self.store_local(block, name);
+        wrapper::store_local(block, name);
     }
 }

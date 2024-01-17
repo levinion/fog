@@ -8,10 +8,12 @@ mod vm;
 use anyhow::Result;
 use config::Config;
 use lazy_static::lazy_static;
+use tokio::sync::Mutex;
+use vm::Vm;
 
 lazy_static! {
-    #[derive(Debug)]
     static ref CONFIGURE: Config = Config::init().unwrap();
+    static ref VM: Mutex<Vm> = Mutex::new(Vm::new());
 }
 
 #[tokio::main]

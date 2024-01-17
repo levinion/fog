@@ -1,12 +1,16 @@
-use crate::core::{block::Block, value::Value};
+use crate::{
+    core::{block::Block, value::Value},
+    VM,
+};
 
 use super::Interpreter;
 
 impl Interpreter {
     /// take a element then get global variable, usually a function
-    pub fn get_global(&mut self) {
+    pub async fn get_global(&mut self) {
         if let Value::String(s) = self.stack.pop_back().unwrap() {
-            let func = self.global_table.get(&s).unwrap_or(&Value::None).clone();
+            let vm = VM.lock().await;
+            let func = vm.runtime.get_global(&s).unwrap_or(&Value::None).clone();
             self.stack.push_back(func);
         } else {
             panic!("panic when get global!")

@@ -4,4 +4,5 @@ pub mod ir;
 pub mod namespace;
 pub mod op;
 pub mod token;
+pub mod typ;
 pub mod value;

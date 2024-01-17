@@ -1,24 +1,22 @@
 use crate::core::{block::Block, token::Token};
 
-use super::Parser;
+use super::{wrapper, Parser};
 
 impl Parser {
     /// enter if block
-    /// eg: ```
-    /// if true{
-    ///     println("hello")
-    /// }```
+    /// [if exp {@println("hello");}]
     pub fn enter_if(&mut self, block: &mut Block) {
         self.assert_next(Token::If);
         self.load_exp(block);
-        self.jump_if_false(block);
+        wrapper::jump_if_false(block);
         self.parse_block(block);
     }
 
     /// parse statement in the block
+    /// [{...}]
     pub fn parse_block(&mut self, block: &mut Block) {
-        self.enter_block(block);
+        wrapper::enter_block(block);
         self.parse_curly_pair(block);
-        self.leave_block(block);
+        wrapper::leave_block(block);
     }
 }

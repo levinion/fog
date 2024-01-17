@@ -1,8 +1,8 @@
-use std::{io::Write, path::PathBuf};
+use std::{fs::File, io::Write, path::PathBuf};
 
 use anyhow::Result;
 
-use crate::config;
+use crate::{config, core::ir::IR, CONFIGURE};
 
 pub fn init_project(name: &str) -> Result<()> {
     let root = PathBuf::from(name);
@@ -18,5 +18,15 @@ pub fn init_project(name: &str) -> Result<()> {
     // create fog.config
     let config_name = root.join("fog.toml");
     config::Config::create(config_name.to_str().unwrap(), name)?;
+    Ok(())
+}
+
+pub fn build_ir(ir: &IR) -> Result<()> {
+    let bin = PathBuf::from("bin");
+    std::fs::create_dir_all(bin.as_path())?;
+    let name = CONFIGURE.config.name.clone() + ".frog";
+    let path = bin.join(name);
+    let mut file = File::create(path)?;
+    file.write_all(&bincode::serialize(ir)?)?;
     Ok(())
 }

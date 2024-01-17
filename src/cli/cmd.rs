@@ -2,7 +2,7 @@ use std::{fs::File, path::PathBuf};
 
 use anyhow::Result;
 
-use crate::{builder, complier, core::ir::IR, vm::VM, CONFIGURE};
+use crate::{builder, complier, core::ir::IR, CONFIGURE, VM};
 
 pub async fn run(file: &Option<String>, debug: &bool) -> Result<()> {
     let ir: IR = if let Some(file) = file {
@@ -23,8 +23,7 @@ pub async fn run(file: &Option<String>, debug: &bool) -> Result<()> {
         println!("{}", serde_json::to_string_pretty(&ir)?);
     }
     // execute the ir.
-    let mut vm = VM::new(ir);
-    vm.execute().await
+    VM.lock().await.execute(ir).await
 }
 
 pub fn new(name: &str) -> Result<()> {
@@ -33,7 +32,7 @@ pub fn new(name: &str) -> Result<()> {
 
 pub fn build() -> Result<()> {
     let ir = complier::complie("src")?;
-    ir.build()
+    builder::build_ir(&ir)
 }
 
 fn get_frog_path() -> PathBuf {

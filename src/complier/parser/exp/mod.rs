@@ -8,7 +8,7 @@ use crate::core::{
     value::Value,
 };
 
-use super::Parser;
+use super::{wrapper, Parser};
 
 impl Parser {
     pub fn load_exp(&mut self, block: &mut Block) {
@@ -27,19 +27,19 @@ impl Parser {
                 Token::GreEq => self.auto_op(block, &mut op_count, Token::GreEq),
                 Token::LesEq => self.auto_op(block, &mut op_count, Token::LesEq),
                 Token::String(s) => {
-                    self.load_const(block, Value::String(s));
+                    wrapper::load_const(block, Value::String(s));
                     op_count += 1;
                 }
                 Token::Name(name) => {
-                    self.load_local(block, name);
+                    wrapper::load_local(block, name);
                     op_count += 1;
                 }
                 Token::Int(i) => {
-                    self.load_const(block, Value::Int(i));
+                    wrapper::load_const(block, Value::Int(i));
                     op_count += 1;
                 }
                 Token::Float(f) => {
-                    self.load_const(block, Value::Float(f));
+                    wrapper::load_const(block, Value::Float(f));
                     op_count += 1;
                 }
                 token => panic!("unexpected token: {:?}", token),
