@@ -1,10 +1,23 @@
-use std::{collections::HashMap, process::exit};
+use std::{collections::HashMap, process::exit, time::Duration};
 
-use crate::core::value::{Args, Value};
+use crate::core::{
+    block::Block,
+    value::{Args, Value},
+};
 
-pub fn init_global_table() -> HashMap<String, Value> {
-    let mut global = HashMap::new();
-    todo!();
+pub enum GlobalItem {
+    Meta(Meta),
+    Block(Block),
+}
+
+pub type Meta = fn(Args) -> i32;
+
+pub fn init_global_table() -> HashMap<String, GlobalItem> {
+    let mut global: HashMap<String, GlobalItem> = HashMap::new();
+    global.insert("@println".to_string(), GlobalItem::Meta(lib_println));
+    global.insert("@print".to_string(), GlobalItem::Meta(lib_print));
+    global.insert("@exit".to_string(), GlobalItem::Meta(lib_exit));
+    global.insert("@sleep".to_string(), GlobalItem::Meta(lib_sleep));
     global
 }
 
@@ -22,7 +35,19 @@ pub fn lib_print(args: Args) -> i32 {
     0
 }
 
-#[allow(unused)]
-pub fn lib_exit(args: Args) -> i32 {
+pub fn lib_exit(_args: Args) -> i32 {
     exit(0)
+}
+
+pub fn lib_sleep(args: Args) -> i32 {
+    if args.len() != 1 {
+        return 1;
+    }
+    let seconds = &args[0];
+    if let Value::Int(i) = seconds {
+        std::thread::sleep(Duration::from_secs(i.abs_diff(0)));
+        0
+    } else {
+        1
+    }
 }

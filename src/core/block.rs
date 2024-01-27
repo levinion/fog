@@ -1,8 +1,8 @@
-use crate::core::{bytecode::ByteCode, value::Value};
+use crate::core::bytecode::ByteCode;
 
-use super::{bytecode::Decorate, namespace::NameSpace};
+use super::{bytecode::Decorate, namespace::NameSpace, typ::Type};
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BlockType {
     Module, // dir
     File,   // file
@@ -12,16 +12,15 @@ pub enum BlockType {
 }
 
 /// wrapper for bytecodes
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, PartialOrd)]
 pub struct Block {
     #[serde(rename = "type")]
     pub t: BlockType,
     pub name: String,
     pub full_name: String,
-    pub args: Vec<String>,
+    pub args: Vec<(String, Type)>,
     pub byte_codes: Vec<ByteCode>,
-    pub constants: Vec<Value>,
-    pub locals: Vec<String>,
+    #[serde(skip)]
     pub sub_blocks: Vec<Block>,
     #[serde(skip)]
     #[serde(default)]
@@ -29,7 +28,7 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn new(full_name: String, t: BlockType, args: Vec<String>) -> Self {
+    pub fn new(full_name: String, t: BlockType, args: Vec<(String, Type)>) -> Self {
         let name = full_name.split("::").last().unwrap();
         Self {
             t,
@@ -37,14 +36,12 @@ impl Block {
             full_name,
             args,
             byte_codes: vec![],
-            constants: vec![],
-            locals: vec![],
             sub_blocks: vec![],
             pc: 0,
         }
     }
 
-    pub fn inherite(father: &Block, name: String, t: BlockType, args: Vec<String>) -> Self {
+    pub fn inherite(father: &Block, name: String, t: BlockType, args: Vec<(String, Type)>) -> Self {
         let full_name = father.full_name.clone() + "::" + &name;
         Self {
             t,
@@ -52,8 +49,6 @@ impl Block {
             full_name,
             args,
             byte_codes: father.byte_codes.clone(),
-            constants: father.constants.clone(),
-            locals: father.locals.clone(),
             sub_blocks: vec![],
             pc: 0,
         }
@@ -82,7 +77,7 @@ impl Block {
         loop {
             let code = self.go_ahead();
             match code {
-                Some(&ByteCode::Decorate(decorate)) => match Decorate::from(decorate) {
+                Some(&ByteCode::Decorate(decorate)) => match decorate {
                     Decorate::EnterBlock => count += 1,
                     Decorate::LeaveBlock => {
                         count -= 1;

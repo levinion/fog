@@ -1,19 +1,24 @@
-use super::op::{BinaryOP, UnaryOP};
+use super::{
+    op::{BinaryOP, UnaryOP},
+    value::Value,
+};
 
-#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize, PartialOrd)]
 pub enum ByteCode {
-    LoadConst(usize), // index of constants table
-    GetGlobal,
-    Decorate(usize),
-    CallFunction(usize, usize), // argc,isFogFunction
+    LoadName,
+    Decorate(Decorate),
+    CallFunction(usize, FunctionType), // argc,isFogFunction
     CallMethod(usize),
-    StoreLocal(usize), // index of locals list
-    LoadLocal(usize),  // index of locals list
+    LoadValue(Value),
+    StoreLocal,
     JumpIfFalse,
     UnaryOP(UnaryOP),
     BinaryOP(BinaryOP),
 }
 
+#[derive(
+    PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, serde::Serialize, serde::Deserialize,
+)]
 pub enum Decorate {
     Fog = 0,
     EnterBlock,
@@ -31,6 +36,9 @@ impl From<usize> for Decorate {
     }
 }
 
+#[derive(
+    PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, serde::Serialize, serde::Deserialize,
+)]
 pub enum FunctionType {
     NormalFunction = 0,
     FogFunction,

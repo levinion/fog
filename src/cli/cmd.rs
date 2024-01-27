@@ -2,10 +2,10 @@ use std::{fs::File, path::PathBuf};
 
 use anyhow::Result;
 
-use crate::{builder, complier, core::ir::IR, CONFIGURE, VM};
+use crate::{builder, complier, core::ir::IR2, vm::init_global_vm, CONFIGURE, VM};
 
 pub async fn run(file: &Option<String>, debug: &bool) -> Result<()> {
-    let ir: IR = if let Some(file) = file {
+    let ir: IR2 = if let Some(file) = file {
         // If file path is given, then complie the single file. Not support now.
         complier::complie_file(file, None)?.into()
     } else {
@@ -17,13 +17,15 @@ pub async fn run(file: &Option<String>, debug: &bool) -> Result<()> {
         } else {
             complier::complie("src")?
         }
-    };
+    }
+    .into();
     // If debug mode is on, output the bytecodes in json format.
     if *debug {
         println!("{}", serde_json::to_string_pretty(&ir)?);
     }
     // execute the ir.
-    VM.lock().await.execute(ir).await
+    init_global_vm(ir);
+    VM.get().unwrap().execute().await
 }
 
 pub fn new(name: &str) -> Result<()> {
@@ -31,7 +33,7 @@ pub fn new(name: &str) -> Result<()> {
 }
 
 pub fn build() -> Result<()> {
-    let ir = complier::complie("src")?;
+    let ir: IR2 = complier::complie("src")?.into();
     builder::build_ir(&ir)
 }
 

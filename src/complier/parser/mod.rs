@@ -9,6 +9,7 @@ use crate::{
         block::{Block, BlockType},
         bytecode::{Decorate, FunctionType},
         token::Token,
+        typ::Type,
         value::Value,
     },
 };
@@ -35,7 +36,7 @@ impl Parser {
         loop {
             let token = self.stream.look_ahead(1);
             match token {
-                Token::Name(name) => self.handle_name(&mut block, name.clone()),
+                Token::Name(name) => self.load_name(&mut block, name.clone()),
                 // let a = 1;
                 Token::Let => self.define_local(&mut block),
                 // fn main(...)
@@ -60,9 +61,9 @@ impl Parser {
                 } else {
                     panic!("expected name!");
                 };
-                let mut args = self.parse_fn_args_to_vec();
+                let args = self.parse_fn_args_to_vec();
                 let mut block = Block::inherite(father, name, BlockType::Fn, args.clone());
-                block.locals.append(&mut args);
+                block.args = args;
                 self.parse_curly_pair(&mut block);
                 father.add_sub_block(block);
             }
@@ -72,16 +73,25 @@ impl Parser {
 
     /// This function is used by parse_blocks.
     /// It should not be used in other position.
-    /// eg: fn test(a,b){...} -> get \["a","b"\]
-    fn parse_fn_args_to_vec(&mut self) -> Vec<String> {
+    /// eg: fn test(a:type,b:type){...} -> get \[("a",type),("b",type)\]
+    fn parse_fn_args_to_vec(&mut self) -> Vec<(String, Type)> {
         let mut args = vec![];
         self.assert_next(Token::ParL);
         loop {
             let token = self.stream.look_ahead(1);
-            match token {
+            match token.clone() {
                 Token::Name(name) => {
-                    args.push(name.clone());
                     self.stream.next();
+                    self.assert_next(Token::Colon);
+                    let typ = {
+                        if let Token::Name(s) = self.stream.next() {
+                            s
+                        } else {
+                            panic!("a type is needed!")
+                        }
+                    };
+
+                    args.push((name, typ.into()));
                 }
                 Token::ParR => break,
                 Token::Comma => self.assert_next(Token::Comma),
@@ -102,25 +112,24 @@ impl Parser {
         loop {
             let token = self.stream.look_ahead(1);
             match token {
-                Token::Name(name) => self.handle_name(block, name.clone()),
+                Token::Name(name) => self.load_name(block, name.clone()),
                 Token::Let => self.define_local(block),
                 Token::ParL => self.call_function(block),
                 Token::If => self.enter_if(block),
                 Token::Fog => self.handle_fog(block),
                 Token::Eos => panic!("eos!"),
                 Token::CurlyR => break,
+                Token::Assign => self.assign_local(block),
                 _ => panic!("unexpected token: {:?}", token),
             }
         }
         self.assert_next(Token::CurlyR);
     }
 
-    // when meets the name, then load it to the stack. Then we can handle it later.
-    fn handle_name(&mut self, block: &mut Block, name: String) {
+    fn load_name(&mut self, block: &mut Block, name: String) {
         self.stream.next();
-        let value = Value::String(name);
-        // add argument name to constants table and then load it to stack
-        wrapper::load_const(block, value);
+        let value = Value::Name(name);
+        wrapper::load_value(block, value);
     }
 
     fn handle_fog(&mut self, block: &mut Block) {
@@ -132,6 +141,7 @@ impl Parser {
     /// eg: print(a, b);
     fn call_function(&mut self, block: &mut Block) {
         self.assert_next(Token::ParL);
+        wrapper::load_name(block);
         // get args
         let argc = self.load_exps(block);
         self.assert_next(Token::ParR);
@@ -143,7 +153,7 @@ impl Parser {
     // eg: value.method(exps);
     fn call_method(&mut self, block: &mut Block, name: String) {
         // get value
-        wrapper::load_local(block, name);
+        wrapper::load_name(block);
         self.assert_next(Token::Dot);
         // get method name
         let name = if let Token::Name(name) = self.stream.next() {
@@ -151,7 +161,7 @@ impl Parser {
         } else {
             panic!("expected some function name!");
         };
-        wrapper::load_const(block, Value::String(name));
+        wrapper::load_value(block, Value::String(name));
         self.assert_next(Token::ParL);
         // get args
         let argc = self.load_exps(block);
@@ -170,17 +180,18 @@ impl Parser {
             panic!("expected name!")
         };
         self.assert_next(Token::Assign);
+        wrapper::load_value(block, Value::Name(name));
         self.load_exp(block);
         self.assert_next(Token::SemiColon);
-        wrapper::store_local(block, name);
+        wrapper::store_local(block);
     }
 
     /// assign a local variable
     /// eg: a = "hi";
-    fn assign_local(&mut self, block: &mut Block, name: String) {
+    fn assign_local(&mut self, block: &mut Block) {
         self.assert_next(Token::Assign);
         self.load_exp(block);
         self.assert_next(Token::SemiColon);
-        wrapper::store_local(block, name);
+        wrapper::store_local(block);
     }
 }

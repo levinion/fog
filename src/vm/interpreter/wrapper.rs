@@ -1,39 +1,76 @@
+use anyhow::{anyhow, Result};
+
 use crate::{
-    core::{block::Block, value::Value},
+    core::{
+        block::Block,
+        value::{Function, Value},
+    },
+    vm::runtime::global::GlobalItem,
     VM,
 };
 
 use super::Interpreter;
 
 impl Interpreter {
-    /// take a element then get global variable, usually a function
-    pub async fn get_global(&mut self) {
-        if let Value::String(s) = self.stack.pop_back().unwrap() {
-            let vm = VM.lock().await;
-            let func = vm.runtime.get_global(&s).unwrap_or(&Value::None).clone();
-            self.stack.push_back(func);
+    async fn get_global(&mut self, block: &Block, s: &str) -> bool {
+        let item = VM
+            .get()
+            .unwrap()
+            .runtime
+            .get_global_by_name(s, block.namespace());
+        match item {
+            Some(GlobalItem::Meta(meta)) => self
+                .stack
+                .push_back(Value::Function(Function::MetaFunction(*meta))),
+            Some(GlobalItem::Block(block)) => self
+                .stack
+                .push_back(Value::Function(Function::NormalFunction(block.clone()))),
+            None => return false,
+        }
+        true
+    }
+
+    pub async fn load_name(&mut self, block: &Block) -> Result<()> {
+        if let Value::Name(s) = self.stack.pop_back().unwrap() {
+            if self.load_local(&s) {
+                return Ok(());
+            }
+            if self.get_global(block, &s).await {
+                Ok(())
+            } else {
+                Err(anyhow!("undefined name!"))
+            }
         } else {
-            panic!("panic when get global!")
+            Err(anyhow!("a name is needed!"))
         }
     }
 
     //  load a value to the stack
-    pub fn load_const(&mut self, block: &mut Block, index: usize) {
-        self.stack.push_back(block.constants[index].clone());
+    pub fn load_value(&mut self, value: Value) {
+        self.stack.push_back(value);
     }
 
-    // take a constant, bind it with a name, then set it as a local value.
-    pub fn store_local(&mut self, block: &mut Block, index: usize) {
+    // [name | value] -> into local_table
+    pub fn store_local(&mut self) {
         let value = self.stack.pop_back().unwrap();
-        let name = block.locals.get(index).unwrap().clone();
-        self.local_table.insert(name, value);
+        let name = self.stack.pop_back().unwrap();
+        if let Value::Name(s) = name {
+            self.local_table.insert(s, value);
+        } else {
+            panic!("a name is needed!")
+        }
     }
 
     // take a name, and load the value.
-    pub fn load_local(&mut self, block: &mut Block, index: usize) {
-        let name = block.locals.get(index).unwrap().clone();
-        self.stack
-            .push_back(self.local_table.get(&name).unwrap().clone());
+    fn load_local(&mut self, s: &str) -> bool {
+        let value = self.local_table.get(s);
+        match value {
+            Some(v) => {
+                self.stack.push_back(v.clone());
+                true
+            }
+            None => false,
+        }
     }
 
     pub fn jump_if_false(&mut self, block: &mut Block) {

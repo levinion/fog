@@ -62,10 +62,10 @@ impl Lexer {
             '*' => Token::Mul,
             '/' => Token::Div,
             ';' => Token::SemiColon,
-            '@' => Token::At,
             '.' => Token::Dot,
+            ':' => Token::Colon,
             ch @ ('0'..='9') => self.read_number(ch),
-            ch @ ('a'..='z' | 'A'..='Z' | '_') => self.read_name(ch),
+            ch @ ('@' | 'a'..='z' | 'A'..='Z' | '_') => self.read_name(ch),
             _ => todo!(),
         }
     }
@@ -82,7 +82,9 @@ impl Lexer {
                     if next == ':' {
                         s.push_str("::");
                     } else {
-                        panic!("unsupported char :");
+                        self.put_char_back();
+                        self.put_char_back();
+                        break;
                     }
                 }
                 _ => {

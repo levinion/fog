@@ -27,19 +27,20 @@ impl Parser {
                 Token::GreEq => self.auto_op(block, &mut op_count, Token::GreEq),
                 Token::LesEq => self.auto_op(block, &mut op_count, Token::LesEq),
                 Token::String(s) => {
-                    wrapper::load_const(block, Value::String(s));
+                    wrapper::load_value(block, Value::String(s));
                     op_count += 1;
                 }
                 Token::Name(name) => {
-                    wrapper::load_local(block, name);
+                    wrapper::load_value(block, Value::Name(name));
+                    wrapper::load_name(block);
                     op_count += 1;
                 }
                 Token::Int(i) => {
-                    wrapper::load_const(block, Value::Int(i));
+                    wrapper::load_value(block, Value::Int(i));
                     op_count += 1;
                 }
                 Token::Float(f) => {
-                    wrapper::load_const(block, Value::Float(f));
+                    wrapper::load_value(block, Value::Float(f));
                     op_count += 1;
                 }
                 token => panic!("unexpected token: {:?}", token),

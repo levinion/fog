@@ -6,13 +6,13 @@ use anyhow::{Context, Result};
 
 use crate::core::{
     block::{Block, BlockType},
-    ir::IR,
+    ir::IR1,
 };
 
 use self::{lexer::Lexer, parser::Parser};
 use std::{fs::File, path::PathBuf};
 
-pub fn complie(root: &str) -> Result<IR> {
+pub fn complie(root: &str) -> Result<IR1> {
     // walk for all files under root
     Ok(handle_modules(root)?.into())
 }

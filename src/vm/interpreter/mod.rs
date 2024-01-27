@@ -35,19 +35,16 @@ impl Interpreter {
             .iter()
             .zip(args.into_iter())
             .for_each(|(name, arg)| {
-                self.local_table.insert(name.clone(), arg);
+                self.local_table.insert(name.0.clone(), arg);
             });
 
         while let Some(code) = block.go_ahead() {
-            match *code {
-                ByteCode::GetGlobal => self.get_global().await,
-                ByteCode::LoadConst(index) => self.load_const(&mut block, index),
-                ByteCode::CallFunction(argc, t) => {
-                    self.call_function(&block, argc, t.into()).await?
-                }
+            match code.clone() {
+                ByteCode::CallFunction(argc, t) => self.call_function(argc, t).await?,
                 ByteCode::CallMethod(argc) => self.call_method(argc)?,
-                ByteCode::StoreLocal(index) => self.store_local(&mut block, index),
-                ByteCode::LoadLocal(index) => self.load_local(&mut block, index),
+                ByteCode::LoadValue(value) => self.load_value(value),
+                ByteCode::StoreLocal => self.store_local(),
+                ByteCode::LoadName => self.load_name(&block).await?,
                 ByteCode::JumpIfFalse => self.jump_if_false(&mut block),
                 ByteCode::UnaryOP(op) => self.unary_op(op)?,
                 ByteCode::BinaryOP(op) => self.binary_op(op)?,

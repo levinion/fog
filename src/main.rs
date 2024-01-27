@@ -1,3 +1,5 @@
+#![feature(lazy_cell)]
+
 mod builder;
 mod cli;
 mod complier;
@@ -5,16 +7,14 @@ mod config;
 mod core;
 mod vm;
 
+use std::sync::{LazyLock, OnceLock};
+
 use anyhow::Result;
 use config::Config;
-use lazy_static::lazy_static;
-use tokio::sync::Mutex;
 use vm::Vm;
 
-lazy_static! {
-    static ref CONFIGURE: Config = Config::init().unwrap();
-    static ref VM: Mutex<Vm> = Mutex::new(Vm::new());
-}
+static CONFIGURE: LazyLock<Config> = LazyLock::new(|| Config::init().unwrap());
+static VM: OnceLock<Vm> = OnceLock::new();
 
 #[tokio::main]
 async fn main() -> Result<()> {

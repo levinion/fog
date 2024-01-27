@@ -2,7 +2,7 @@ use std::{fs::File, io::Write, path::PathBuf};
 
 use anyhow::Result;
 
-use crate::{config, core::ir::IR, CONFIGURE};
+use crate::{config, core::ir::IR2, CONFIGURE};
 
 pub fn init_project(name: &str) -> Result<()> {
     let root = PathBuf::from(name);
@@ -21,7 +21,7 @@ pub fn init_project(name: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn build_ir(ir: &IR) -> Result<()> {
+pub fn build_ir(ir: &IR2) -> Result<()> {
     let bin = PathBuf::from("bin");
     std::fs::create_dir_all(bin.as_path())?;
     let name = CONFIGURE.config.name.clone() + ".frog";

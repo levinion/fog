@@ -1,13 +1,13 @@
 #![allow(dead_code)]
 use super::token::Token;
 
-#[derive(PartialEq, Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[derive(PartialEq, PartialOrd, Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum UnaryOP {
     Sub = 0, // -
     Excl,    // !
 }
 
-#[derive(PartialEq, Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[derive(PartialEq, PartialOrd, Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum BinaryOP {
     Add = 0, // +
     Sub,     // -
