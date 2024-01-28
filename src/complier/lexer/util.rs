@@ -1,9 +1,9 @@
 use crate::core::token::Token;
 
 use super::Lexer;
-use std::io::{Read, Seek};
+use std::io::prelude::*;
 
-impl Lexer {
+impl<T: Read + Seek> Lexer<T> {
     /// read a char from input
     pub fn read_char(&mut self) -> char {
         let mut buf: [u8; 1] = [0];

@@ -1,26 +1,27 @@
 pub mod token_stream;
 mod util;
-use std::fs::File;
+use std::io::{prelude::*, BufReader};
 
 use crate::core::token::Token;
 
 use self::token_stream::TokenStream;
 
-pub struct Lexer {
-    input: File,
+pub struct Lexer<T: Read> {
     pre_read_token: Option<Token>,
+    input: BufReader<T>,
 }
 
-impl From<File> for Lexer {
-    fn from(value: File) -> Self {
+impl<T: Read + Seek> From<T> for Lexer<T> {
+    fn from(value: T) -> Self {
+        let reader = BufReader::new(value);
         Self {
-            input: value,
+            input: reader,
             pre_read_token: None,
         }
     }
 }
 
-impl Lexer {
+impl<T: Read + Seek> Lexer<T> {
     pub fn into_token_stream(mut self) -> TokenStream {
         let mut tokens: Vec<Token> = Vec::new();
         loop {

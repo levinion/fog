@@ -9,7 +9,7 @@ use crate::{
         block::{Block, BlockType},
         bytecode::{Decorate, FunctionType},
         token::Token,
-        typ::Type,
+        value::Type,
         value::Value,
     },
 };
@@ -56,11 +56,7 @@ impl Parser {
             // eg: fn test(a,b){do something here}
             Token::Fn => {
                 self.stream.next();
-                let name = if let Token::Name(name) = self.stream.next() {
-                    name
-                } else {
-                    panic!("expected name!");
-                };
+                let name = self.assert_next_name();
                 let args = self.parse_fn_args_to_vec();
                 let mut block = Block::inherite(father, name, BlockType::Fn, args.clone());
                 block.args = args;
@@ -83,14 +79,7 @@ impl Parser {
                 Token::Name(name) => {
                     self.stream.next();
                     self.assert_next(Token::Colon);
-                    let typ = {
-                        if let Token::Name(s) = self.stream.next() {
-                            s
-                        } else {
-                            panic!("a type is needed!")
-                        }
-                    };
-
+                    let typ = self.assert_next_name();
                     args.push((name, typ.into()));
                 }
                 Token::ParR => break,
@@ -112,9 +101,15 @@ impl Parser {
         loop {
             let token = self.stream.look_ahead(1);
             match token {
-                Token::Name(name) => self.load_name(block, name.clone()),
+                Token::Name(_) => {
+                    let token = self.stream.look_ahead(2);
+                    match token {
+                        Token::Assign => self.assign_local(block),
+                        Token::ParL => self.call_function(block),
+                        _ => todo!(),
+                    }
+                }
                 Token::Let => self.define_local(block),
-                Token::ParL => self.call_function(block),
                 Token::If => self.enter_if(block),
                 Token::Fog => self.handle_fog(block),
                 Token::Eos => panic!("eos!"),
@@ -127,7 +122,6 @@ impl Parser {
     }
 
     fn load_name(&mut self, block: &mut Block, name: String) {
-        self.stream.next();
         let value = Value::Name(name);
         wrapper::load_value(block, value);
     }
@@ -140,6 +134,8 @@ impl Parser {
     /// call normal function with name
     /// eg: print(a, b);
     fn call_function(&mut self, block: &mut Block) {
+        let name = self.assert_next_name();
+        self.load_name(block, name);
         self.assert_next(Token::ParL);
         wrapper::load_name(block);
         // get args
@@ -151,16 +147,13 @@ impl Parser {
     }
 
     // eg: value.method(exps);
-    fn call_method(&mut self, block: &mut Block, name: String) {
-        // get value
+    fn call_method(&mut self, block: &mut Block) {
+        let name = self.assert_next_name();
+        self.load_name(block, name);
         wrapper::load_name(block);
         self.assert_next(Token::Dot);
         // get method name
-        let name = if let Token::Name(name) = self.stream.next() {
-            name
-        } else {
-            panic!("expected some function name!");
-        };
+        let name = self.assert_next_name();
         wrapper::load_value(block, Value::String(name));
         self.assert_next(Token::ParL);
         // get args
@@ -174,11 +167,7 @@ impl Parser {
     /// eg: let a = "hello world";
     fn define_local(&mut self, block: &mut Block) {
         self.assert_next(Token::Let);
-        let name = if let Token::Name(s) = self.stream.next() {
-            s
-        } else {
-            panic!("expected name!")
-        };
+        let name = self.assert_next_name();
         self.assert_next(Token::Assign);
         wrapper::load_value(block, Value::Name(name));
         self.load_exp(block);
@@ -189,6 +178,8 @@ impl Parser {
     /// assign a local variable
     /// eg: a = "hi";
     fn assign_local(&mut self, block: &mut Block) {
+        let name = self.assert_next_name();
+        self.load_name(block, name);
         self.assert_next(Token::Assign);
         self.load_exp(block);
         self.assert_next(Token::SemiColon);

@@ -3,9 +3,11 @@ mod method;
 
 use std::collections::HashMap;
 
-use anyhow::{Context, Result};
-
-use crate::core::{ir::IR2, namespace::NameSpace, typ::Type, value::Args};
+use crate::core::{
+    ir::IR2,
+    namespace::NameSpace,
+    value::{Args, Type},
+};
 
 use self::{global::GlobalItem, method::init_method_table};
 

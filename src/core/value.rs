@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::vm::runtime::global::Meta;
 
-use super::{block::Block, typ::Type};
+use super::block::Block;
 
 pub type Args = Vec<Value>;
 
@@ -35,8 +35,48 @@ impl Display for Value {
     }
 }
 
+impl Value {
+    pub fn typ(&self) -> Type {
+        match self {
+            Value::String(_) => Type::String,
+            Value::Name(_) => Type::Name,
+            Value::Bool(_) => Type::Bool,
+            Value::Int(_) => Type::Int,
+            Value::Float(_) => Type::Float,
+            Value::Function(_) => Type::Function,
+            Value::Type(_) => Type::Type,
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Debug, PartialOrd)]
 pub enum Function {
     NormalFunction(Block), // block name
     MetaFunction(Meta),    // meta name
+}
+
+#[derive(
+    PartialEq, Eq, Hash, Debug, Clone, Copy, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
+pub enum Type {
+    String,
+    Name,
+    Bool,
+    Int,
+    Float,
+    Function,
+    Type,
+}
+
+impl From<String> for Type {
+    fn from(value: String) -> Self {
+        match &value as &str {
+            "string" => Type::String,
+            "bool" => Type::Bool,
+            "int" => Type::Int,
+            "float" => Type::Float,
+            "fn" => Type::Function,
+            _ => unreachable!(),
+        }
+    }
 }

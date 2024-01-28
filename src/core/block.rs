@@ -1,6 +1,6 @@
 use crate::core::bytecode::ByteCode;
 
-use super::{bytecode::Decorate, namespace::NameSpace, typ::Type};
+use super::{bytecode::Decorate, namespace::NameSpace, value::Type};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BlockType {

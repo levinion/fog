@@ -9,4 +9,20 @@ impl Parser {
             panic!("expect token: {token:?}")
         }
     }
+
+    pub fn assert_next_string(&mut self) -> String {
+        if let Token::String(s) = self.stream.next() {
+            s
+        } else {
+            panic!("expect a string!")
+        }
+    }
+
+    pub fn assert_next_name(&mut self) -> String {
+        if let Token::Name(s) = self.stream.next() {
+            s
+        } else {
+            panic!("expect a name!")
+        }
+    }
 }

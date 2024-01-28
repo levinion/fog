@@ -1,8 +1,11 @@
 use std::{collections::HashMap, process::exit, time::Duration};
 
-use crate::core::{
-    block::Block,
-    value::{Args, Value},
+use crate::{
+    complier::complie_string,
+    core::{
+        block::Block,
+        value::{Args, Value},
+    },
 };
 
 pub enum GlobalItem {
@@ -50,4 +53,26 @@ pub fn lib_sleep(args: Args) -> i32 {
     } else {
         1
     }
+}
+
+pub fn lib_type(args: Args) -> i32 {
+    if args.len() != 1 {
+        return 1;
+    }
+    let value = &args[0];
+    value.typ();
+    todo!();
+}
+
+pub fn eval(args: Args) -> i32 {
+    if args.len() != 1 {
+        return 1;
+    }
+    let code = &args[0];
+    if let Value::String(s) = code {
+        // TODO: rebuild the package system.
+        todo!();
+        // complie_string(&s, father)
+    }
+    todo!()
 }

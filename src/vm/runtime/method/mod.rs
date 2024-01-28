@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::core::{typ::Type, value::Args};
+use crate::core::value::{Args, Type};
 
 pub fn init_method_table() -> HashMap<Type, fn(Args) -> i32> {
     let map = HashMap::new();
