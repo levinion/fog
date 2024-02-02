@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use super::token::Token;
+use super::token::TokenVal;
 
 #[derive(PartialEq, PartialOrd, Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum UnaryOP {
@@ -54,28 +54,29 @@ impl InfixBinaryOP {
     }
 }
 
-impl From<Token> for UnaryOP {
-    fn from(value: Token) -> Self {
+impl From<TokenVal> for UnaryOP {
+    fn from(value: TokenVal) -> Self {
         match value {
-            Token::Sub => Self::Sub,
+            TokenVal::Sub => Self::Sub,
+            TokenVal::Excl => Self::Excl,
             op => panic!("invalid unary op: {:?}", op),
         }
     }
 }
 
-impl From<Token> for BinaryOP {
-    fn from(value: Token) -> Self {
+impl From<TokenVal> for BinaryOP {
+    fn from(value: TokenVal) -> Self {
         match value {
-            Token::Add => Self::Add,
-            Token::Sub => Self::Sub,
-            Token::Mul => Self::Mul,
-            Token::Div => Self::Div,
-            Token::Equal => Self::Equal,
-            Token::NotEq => Self::NotEq,
-            Token::Greater => Self::Greater,
-            Token::Less => Self::Less,
-            Token::GreEq => Self::GreEq,
-            Token::LesEq => Self::LesEq,
+            TokenVal::Add => Self::Add,
+            TokenVal::Sub => Self::Sub,
+            TokenVal::Mul => Self::Mul,
+            TokenVal::Div => Self::Div,
+            TokenVal::Equal => Self::Equal,
+            TokenVal::NotEq => Self::NotEq,
+            TokenVal::Greater => Self::Greater,
+            TokenVal::Less => Self::Less,
+            TokenVal::GreEq => Self::GreEq,
+            TokenVal::LesEq => Self::LesEq,
             _ => panic!("invalid binary op!"),
         }
     }

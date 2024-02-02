@@ -8,7 +8,7 @@ use crate::{
     core::{
         block::{Block, BlockType},
         bytecode::{Decorate, FunctionType},
-        token::Token,
+        token::TokenVal,
         value::Type,
         value::Value,
     },
@@ -35,13 +35,13 @@ impl Parser {
         };
         loop {
             let token = self.stream.look_ahead(1);
-            match token {
-                Token::Name(name) => self.load_name(&mut block, name.clone()),
+            match &token.val {
+                TokenVal::Name(name) => self.load_name(&mut block, name.clone()),
                 // let a = 1;
-                Token::Let => self.define_local(&mut block),
+                TokenVal::Let => self.define_local(&mut block),
                 // fn main(...)
-                Token::Fn => self.parse_blocks(&mut block),
-                Token::Eos => break,
+                TokenVal::Fn => self.parse_blocks(&mut block),
+                TokenVal::Eos => break,
                 _ => panic!("unexpected token: {:?}", token),
             }
         }
@@ -52,11 +52,11 @@ impl Parser {
     // eg: fn test(a, b){...}
     pub fn parse_blocks(&mut self, father: &mut Block) {
         let token = self.stream.look_ahead(1);
-        match token {
+        match &token.val {
             // eg: fn test(a,b){do something here}
-            Token::Fn => {
+            TokenVal::Fn => {
                 self.stream.next();
-                let name = self.assert_next_name();
+                let (name, name_t) = self.assert_next_name();
                 let args = self.parse_fn_args_to_vec();
                 let mut block = Block::inherite(father, name, BlockType::Fn, args.clone());
                 block.args = args;
@@ -72,22 +72,22 @@ impl Parser {
     /// eg: fn test(a:type,b:type){...} -> get \[("a",type),("b",type)\]
     fn parse_fn_args_to_vec(&mut self) -> Vec<(String, Type)> {
         let mut args = vec![];
-        self.assert_next(Token::ParL);
+        self.assert_next(TokenVal::ParL);
         loop {
             let token = self.stream.look_ahead(1);
-            match token.clone() {
-                Token::Name(name) => {
+            match token.clone().val {
+                TokenVal::Name(name) => {
                     self.stream.next();
-                    self.assert_next(Token::Colon);
-                    let typ = self.assert_next_name();
+                    self.assert_next(TokenVal::Colon);
+                    let (typ, typ_t) = self.assert_next_name();
                     args.push((name, typ.into()));
                 }
-                Token::ParR => break,
-                Token::Comma => self.assert_next(Token::Comma),
+                TokenVal::ParR => break,
+                TokenVal::Comma => self.assert_next(TokenVal::Comma),
                 _ => panic!("invalid token!"),
             }
         }
-        self.assert_next(Token::ParR);
+        self.assert_next(TokenVal::ParR);
         args
     }
 
@@ -97,28 +97,28 @@ impl Parser {
     /// This is the true function that handle the logic.
     /// eg: {...}
     fn parse_curly_pair(&mut self, block: &mut Block) {
-        self.assert_next(Token::CurlyL);
+        self.assert_next(TokenVal::CurlyL);
         loop {
             let token = self.stream.look_ahead(1);
-            match token {
-                Token::Name(_) => {
+            match token.val {
+                TokenVal::Name(_) => {
                     let token = self.stream.look_ahead(2);
-                    match token {
-                        Token::Assign => self.assign_local(block),
-                        Token::ParL => self.call_function(block),
+                    match token.val {
+                        TokenVal::Assign => self.assign_local(block),
+                        TokenVal::ParL => self.call_function(block),
                         _ => todo!(),
                     }
                 }
-                Token::Let => self.define_local(block),
-                Token::If => self.enter_if(block),
-                Token::Fog => self.handle_fog(block),
-                Token::Eos => panic!("eos!"),
-                Token::CurlyR => break,
-                Token::Assign => self.assign_local(block),
+                TokenVal::Let => self.define_local(block),
+                TokenVal::If => self.enter_if(block),
+                TokenVal::Fog => self.handle_fog(block),
+                TokenVal::Eos => panic!("eos!"),
+                TokenVal::CurlyR => break,
+                TokenVal::Assign => self.assign_local(block),
                 _ => panic!("unexpected token: {:?}", token),
             }
         }
-        self.assert_next(Token::CurlyR);
+        self.assert_next(TokenVal::CurlyR);
     }
 
     fn load_name(&mut self, block: &mut Block, name: String) {
@@ -134,55 +134,55 @@ impl Parser {
     /// call normal function with name
     /// eg: print(a, b);
     fn call_function(&mut self, block: &mut Block) {
-        let name = self.assert_next_name();
+        let (name, name_t) = self.assert_next_name();
         self.load_name(block, name);
-        self.assert_next(Token::ParL);
+        self.assert_next(TokenVal::ParL);
         wrapper::load_name(block);
         // get args
         let argc = self.load_exps(block);
-        self.assert_next(Token::ParR);
-        self.assert_next(Token::SemiColon);
+        self.assert_next(TokenVal::ParR);
+        self.assert_next(TokenVal::SemiColon);
         // call function
         wrapper::call_function(block, argc, FunctionType::Undefined);
     }
 
     // eg: value.method(exps);
     fn call_method(&mut self, block: &mut Block) {
-        let name = self.assert_next_name();
+        let (name, name_t) = self.assert_next_name();
         self.load_name(block, name);
         wrapper::load_name(block);
-        self.assert_next(Token::Dot);
+        self.assert_next(TokenVal::Dot);
         // get method name
-        let name = self.assert_next_name();
+        let (name, name_t) = self.assert_next_name();
         wrapper::load_value(block, Value::String(name));
-        self.assert_next(Token::ParL);
+        self.assert_next(TokenVal::ParL);
         // get args
         let argc = self.load_exps(block);
-        self.assert_next(Token::ParR);
-        self.assert_next(Token::SemiColon);
+        self.assert_next(TokenVal::ParR);
+        self.assert_next(TokenVal::SemiColon);
         wrapper::call_method(block, argc);
     }
 
     /// define a local variable
     /// eg: let a = "hello world";
     fn define_local(&mut self, block: &mut Block) {
-        self.assert_next(Token::Let);
-        let name = self.assert_next_name();
-        self.assert_next(Token::Assign);
+        self.assert_next(TokenVal::Let);
+        let (name, name_t) = self.assert_next_name();
+        self.assert_next(TokenVal::Assign);
         wrapper::load_value(block, Value::Name(name));
         self.load_exp(block);
-        self.assert_next(Token::SemiColon);
+        self.assert_next(TokenVal::SemiColon);
         wrapper::store_local(block);
     }
 
     /// assign a local variable
     /// eg: a = "hi";
     fn assign_local(&mut self, block: &mut Block) {
-        let name = self.assert_next_name();
+        let (name, name_t) = self.assert_next_name();
         self.load_name(block, name);
-        self.assert_next(Token::Assign);
+        self.assert_next(TokenVal::Assign);
         self.load_exp(block);
-        self.assert_next(Token::SemiColon);
+        self.assert_next(TokenVal::SemiColon);
         wrapper::store_local(block);
     }
 }

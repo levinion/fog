@@ -4,7 +4,7 @@ use crate::core::{
     block::Block,
     bytecode::ByteCode,
     op::{BinaryOP, UnaryOP},
-    token::Token,
+    token::TokenVal,
     value::Value,
 };
 
@@ -15,31 +15,31 @@ impl Parser {
         let output = self.handle_infix();
         let mut op_count: usize = 0; // count there is how many values on the stack
         for token in output.into_iter() {
-            match token {
-                Token::Add => self.auto_op(block, &mut op_count, Token::Add),
-                Token::Sub => self.auto_op(block, &mut op_count, Token::Sub),
-                Token::Mul => self.auto_op(block, &mut op_count, Token::Mul),
-                Token::Div => self.auto_op(block, &mut op_count, Token::Div),
-                Token::Equal => self.auto_op(block, &mut op_count, Token::Equal),
-                Token::NotEq => self.auto_op(block, &mut op_count, Token::NotEq),
-                Token::Greater => self.auto_op(block, &mut op_count, Token::Greater),
-                Token::Less => self.auto_op(block, &mut op_count, Token::Less),
-                Token::GreEq => self.auto_op(block, &mut op_count, Token::GreEq),
-                Token::LesEq => self.auto_op(block, &mut op_count, Token::LesEq),
-                Token::String(s) => {
+            match token.val {
+                TokenVal::Add => self.auto_op(block, &mut op_count, TokenVal::Add),
+                TokenVal::Sub => self.auto_op(block, &mut op_count, TokenVal::Sub),
+                TokenVal::Mul => self.auto_op(block, &mut op_count, TokenVal::Mul),
+                TokenVal::Div => self.auto_op(block, &mut op_count, TokenVal::Div),
+                TokenVal::Equal => self.auto_op(block, &mut op_count, TokenVal::Equal),
+                TokenVal::NotEq => self.auto_op(block, &mut op_count, TokenVal::NotEq),
+                TokenVal::Greater => self.auto_op(block, &mut op_count, TokenVal::Greater),
+                TokenVal::Less => self.auto_op(block, &mut op_count, TokenVal::Less),
+                TokenVal::GreEq => self.auto_op(block, &mut op_count, TokenVal::GreEq),
+                TokenVal::LesEq => self.auto_op(block, &mut op_count, TokenVal::LesEq),
+                TokenVal::String(s) => {
                     wrapper::load_value(block, Value::String(s));
                     op_count += 1;
                 }
-                Token::Name(name) => {
+                TokenVal::Name(name) => {
                     wrapper::load_value(block, Value::Name(name));
                     wrapper::load_name(block);
                     op_count += 1;
                 }
-                Token::Int(i) => {
+                TokenVal::Int(i) => {
                     wrapper::load_value(block, Value::Int(i));
                     op_count += 1;
                 }
-                Token::Float(f) => {
+                TokenVal::Float(f) => {
                     wrapper::load_value(block, Value::Float(f));
                     op_count += 1;
                 }
@@ -51,21 +51,21 @@ impl Parser {
     /// load exps separated by comma
     pub fn load_exps(&mut self, block: &mut Block) -> usize {
         let mut count: usize = 0;
-        if let &Token::ParR = self.stream.look_ahead(1) {
+        if let TokenVal::ParR = self.stream.look_ahead(1).val {
             return count;
         }
         self.load_exp(block);
         count += 1;
         // if encounter comma, then continue read exp
-        if let &Token::Comma = self.stream.look_ahead(1) {
-            self.assert_next(Token::Comma);
+        if let TokenVal::Comma = self.stream.look_ahead(1).val {
+            self.assert_next(TokenVal::Comma);
             count += self.load_exps(block);
         }
         count
     }
 
     // auto choose how to perform calulation
-    fn auto_op(&mut self, block: &mut Block, count: &mut usize, op: Token) {
+    fn auto_op(&mut self, block: &mut Block, count: &mut usize, op: TokenVal) {
         if *count == 1 {
             self.unary_op(block, op.into());
             *count -= 1;
