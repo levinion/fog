@@ -45,6 +45,7 @@ impl<T: Read + Seek> Lexer<T> {
     fn do_next(&mut self) -> Token {
         let start = self.coliner.current();
         let ch = self.coliner.read_char();
+        #[allow(clippy::needless_late_init)]
         let token;
         match ch {
             '\0' => token = TokenVal::Eos,
@@ -122,6 +123,8 @@ impl<T: Read + Seek> Lexer<T> {
             "else" => TokenVal::Else,
             "fn" => TokenVal::Fn,
             "fog" => TokenVal::Fog,
+            "import" => TokenVal::Import,
+            "use" => TokenVal::Use,
             _ => TokenVal::Name(s),
         }
     }

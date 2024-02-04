@@ -70,6 +70,8 @@ pub enum TokenVal {
     Fog,            // fog
     Dot,            // .
     Colon,          // :
+    Import,         // import
+    Use,            // use
 }
 
 impl From<InfixBinaryOP> for TokenVal {

@@ -1,17 +1,11 @@
 use std::collections::HashMap;
 
-use crate::complier::optimizer::{self, optimize};
+use crate::complier::optimizer;
 
 use super::block::Block;
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
-pub struct IR1(Vec<Block>);
-
-impl IR1 {
-    pub fn optimize(self) -> IR2 {
-        optimizer::optimize(self)
-    }
-}
+pub struct IR1(pub Vec<Block>);
 
 impl From<Vec<Block>> for IR1 {
     fn from(value: Vec<Block>) -> Self {
@@ -35,7 +29,7 @@ impl From<IR1> for HashMap<String, Block> {
 
 impl From<IR1> for IR2 {
     fn from(value: IR1) -> Self {
-        optimize(value)
+        optimizer::optimize(value)
     }
 }
 
@@ -45,7 +39,6 @@ fn build_blocks(map: &mut HashMap<String, Block>, blocks: &[Block]) {
     }
     for block in blocks {
         map.insert(block.full_name.clone(), block.clone());
-        build_blocks(map, &block.sub_blocks);
     }
 }
 

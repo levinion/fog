@@ -15,7 +15,7 @@ pub async fn run(file: &Option<String>, debug: &bool) -> Result<()> {
             let file = File::open(frog.as_path())?;
             bincode::deserialize_from(file)?
         } else {
-            complier::complie("src")?
+            complier::complie_project("src/main.fog")?
         }
     }
     .into();
@@ -33,7 +33,7 @@ pub fn new(name: &str) -> Result<()> {
 }
 
 pub fn build() -> Result<()> {
-    let ir: IR2 = complier::complie("src")?.into();
+    let ir: IR2 = complier::complie_project("src/main.fog")?.into();
     builder::build_ir(&ir)
 }
 

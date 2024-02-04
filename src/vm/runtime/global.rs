@@ -1,11 +1,8 @@
 use std::{collections::HashMap, process::exit, time::Duration};
 
-use crate::{
-    complier::complie_string,
-    core::{
-        block::Block,
-        value::{Args, Value},
-    },
+use crate::core::{
+    block::Block,
+    value::{Args, Value},
 };
 
 pub enum GlobalItem {

@@ -3,6 +3,8 @@ mod control_flow;
 mod exp;
 mod wrapper;
 
+use std::path::PathBuf;
+
 use crate::{
     complier::lexer::token_stream::TokenStream,
     core::{
@@ -27,30 +29,71 @@ impl From<TokenStream> for Parser {
 
 impl Parser {
     /// parse all file to a block
-    pub fn parse_file(&mut self, name: String, father: Option<&Block>) -> Block {
-        let mut block = if let Some(father) = father {
-            Block::inherite(father, name, BlockType::File, vec![])
+    pub fn parse_file(
+        &mut self,
+        name: String,
+        path: PathBuf,
+        father: Option<&Block>,
+    ) -> Vec<Block> {
+        let mut root = if let Some(father) = father {
+            Block::inherite(father, name, path.clone(), BlockType::File, vec![])
         } else {
-            Block::new(name, BlockType::File, vec![])
+            Block::new(name, path.clone(), BlockType::File, vec![])
         };
+        let mut blocks = vec![root.clone()];
         loop {
             let token = self.stream.look_ahead(1);
             match &token.val {
-                TokenVal::Name(name) => self.load_name(&mut block, name.clone()),
+                TokenVal::Import => self.include(&root, &path, &mut blocks),
+                TokenVal::Name(name) => self.load_name(&mut root, name.clone()),
                 // let a = 1;
-                TokenVal::Let => self.define_local(&mut block),
+                TokenVal::Let => self.define_local(&mut root),
                 // fn main(...)
-                TokenVal::Fn => self.parse_blocks(&mut block),
+                TokenVal::Fn => self.parse_blocks(&root, path.clone(), &mut blocks),
                 TokenVal::Eos => break,
                 _ => panic!("unexpected token: {:?}", token),
             }
         }
-        block
+        blocks
+    }
+
+    pub fn include(&mut self, father: &Block, path: &PathBuf, blocks: &mut Vec<Block>) {
+        self.stream.next();
+        let (name, token) = self.assert_next_name();
+        let (possible_path1_exists, r1) = {
+            let mut path = path.clone();
+            path.set_extension("");
+            let dir_name = path.join(&name);
+            let filename = path.join("mod.fog");
+            (
+                dir_name.is_dir() && filename.is_file(),
+                filename.to_string_lossy().to_string(),
+            )
+        };
+        let (possible_path2_exists, r2) = {
+            let path = path.parent().unwrap();
+            let filename = path.join(name.to_string() + ".fog");
+            (filename.exists(), filename.to_string_lossy().to_string())
+        };
+
+        let name = {
+            if possible_path2_exists && possible_path1_exists {
+                panic!("double defined module: {}", name);
+            } else if possible_path2_exists {
+                r2
+            } else if possible_path1_exists {
+                r1
+            } else {
+                panic!("no module named: {}", name);
+            }
+        };
+        let mut result = crate::complier::complie_file(&name, Some(father)).unwrap();
+        blocks.append(&mut result);
     }
 
     /// parse blocks
     // eg: fn test(a, b){...}
-    pub fn parse_blocks(&mut self, father: &mut Block) {
+    pub fn parse_blocks(&mut self, father: &Block, path: PathBuf, blocks: &mut Vec<Block>) {
         let token = self.stream.look_ahead(1);
         match &token.val {
             // eg: fn test(a,b){do something here}
@@ -58,10 +101,10 @@ impl Parser {
                 self.stream.next();
                 let (name, name_t) = self.assert_next_name();
                 let args = self.parse_fn_args_to_vec();
-                let mut block = Block::inherite(father, name, BlockType::Fn, args.clone());
+                let mut block = Block::inherite(father, name, path, BlockType::Fn, args.clone());
                 block.args = args;
-                self.parse_curly_pair(&mut block);
-                father.add_sub_block(block);
+                self.parse_bucket(&mut block);
+                blocks.push(block);
             }
             token => panic!("invalid block! found token: {token:?}"),
         }
@@ -96,7 +139,7 @@ impl Parser {
     /// Parse a block until meet CurlyR.
     /// This is the true function that handle the logic.
     /// eg: {...}
-    fn parse_curly_pair(&mut self, block: &mut Block) {
+    fn parse_bucket(&mut self, block: &mut Block) {
         self.assert_next(TokenVal::CurlyL);
         loop {
             let token = self.stream.look_ahead(1);

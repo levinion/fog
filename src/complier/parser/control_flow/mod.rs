@@ -16,7 +16,7 @@ impl Parser {
     /// [{...}]
     pub fn parse_block(&mut self, block: &mut Block) {
         wrapper::enter_block(block);
-        self.parse_curly_pair(block);
+        self.parse_bucket(block);
         wrapper::leave_block(block);
     }
 }

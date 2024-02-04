@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::core::bytecode::ByteCode;
 
 use super::{bytecode::Decorate, namespace::NameSpace, value::Type};
@@ -18,48 +20,49 @@ pub struct Block {
     pub t: BlockType,
     pub name: String,
     pub full_name: String,
+    pub path: PathBuf,
     pub args: Vec<(String, Type)>,
     pub byte_codes: Vec<ByteCode>,
-    #[serde(skip)]
-    pub sub_blocks: Vec<Block>,
     #[serde(skip)]
     #[serde(default)]
     pub pc: usize,
 }
 
 impl Block {
-    pub fn new(full_name: String, t: BlockType, args: Vec<(String, Type)>) -> Self {
+    pub fn new(full_name: String, path: PathBuf, t: BlockType, args: Vec<(String, Type)>) -> Self {
         let name = full_name.split("::").last().unwrap();
         Self {
             t,
             name: name.into(),
             full_name,
+            path,
             args,
             byte_codes: vec![],
-            sub_blocks: vec![],
             pc: 0,
         }
     }
 
-    pub fn inherite(father: &Block, name: String, t: BlockType, args: Vec<(String, Type)>) -> Self {
+    pub fn inherite(
+        father: &Block,
+        name: String,
+        path: PathBuf,
+        t: BlockType,
+        args: Vec<(String, Type)>,
+    ) -> Self {
         let full_name = father.full_name.clone() + "::" + &name;
         Self {
             t,
             name,
             full_name,
+            path,
             args,
             byte_codes: father.byte_codes.clone(),
-            sub_blocks: vec![],
             pc: 0,
         }
     }
 
     pub fn namespace(&self) -> NameSpace {
         NameSpace::new(self.full_name.clone()).get_super()
-    }
-
-    pub fn add_sub_block(&mut self, block: Block) {
-        self.sub_blocks.push(block);
     }
 
     pub fn go_ahead(&mut self) -> Option<&ByteCode> {
