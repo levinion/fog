@@ -15,7 +15,7 @@ impl Parser {
         let output = self.handle_infix();
         let mut op_count: usize = 0; // count there is how many values on the stack
         for token in output.into_iter() {
-            match token.val.clone() {
+            match token.0.val.clone() {
                 TokenVal::Add => self.auto_op(block, &mut op_count, TokenVal::Add),
                 TokenVal::Sub => self.auto_op(block, &mut op_count, TokenVal::Sub),
                 TokenVal::Mul => self.auto_op(block, &mut op_count, TokenVal::Mul),
@@ -53,13 +53,13 @@ impl Parser {
     /// load exps separated by comma
     pub fn load_exps(&mut self, block: &mut Block) -> usize {
         let mut count: usize = 0;
-        if let TokenVal::ParR = self.stream.look_ahead(1).val {
+        if let TokenVal::ParR = self.stream.look_ahead(1).0.val {
             return count;
         }
         self.load_exp(block);
         count += 1;
         // if encounter comma, then continue read exp
-        if let TokenVal::Comma = self.stream.look_ahead(1).val {
+        if let TokenVal::Comma = self.stream.look_ahead(1).0.val {
             self.assert_next(TokenVal::Comma);
             count += self.load_exps(block);
         }

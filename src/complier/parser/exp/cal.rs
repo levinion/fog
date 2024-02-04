@@ -14,7 +14,7 @@ impl Parser {
         let mut par_count = 0; // count par pairs
         loop {
             let token = self.stream.look_ahead(1);
-            match token.val {
+            match token.0.val {
                 TokenVal::Int(_) | TokenVal::Float(_) | TokenVal::String(_) | TokenVal::Name(_) => {
                     output_stack.push(self.stream.next());
                 }
@@ -46,7 +46,7 @@ impl Parser {
 
                     loop {
                         let top = op_stack.pop_back().unwrap();
-                        match top.infix_binary_op() {
+                        match top.0.infix_binary_op() {
                             InfixBinaryOP::ParL => break,
                             _ => output_stack.push(top),
                         }
@@ -73,7 +73,7 @@ impl Parser {
             let top = op_stack.back();
             match top {
                 Some(top) => {
-                    if token.infix_binary_op().priority() > top.infix_binary_op().priority() {
+                    if token.0.infix_binary_op().priority() > top.0.infix_binary_op().priority() {
                         op_stack.push_back(top.clone());
                         break;
                     }

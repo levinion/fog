@@ -7,7 +7,8 @@ use super::{
 pub enum ByteCode {
     LoadName,
     Decorate(Decorate),
-    CallFunction(usize, FunctionType), // argc,isFogFunction
+    CallFunction(usize), // argc,isFogFunction
+    FogCallFunction(usize),
     CallMethod(usize),
     LoadValue(Value),
     StoreLocal,
@@ -20,7 +21,6 @@ pub enum ByteCode {
     PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, serde::Serialize, serde::Deserialize,
 )]
 pub enum Decorate {
-    Fog = 0,
     EnterBlock,
     LeaveBlock,
 }
@@ -28,29 +28,8 @@ pub enum Decorate {
 impl From<usize> for Decorate {
     fn from(value: usize) -> Self {
         match value {
-            0 => Self::Fog,
-            1 => Self::EnterBlock,
-            2 => Self::LeaveBlock,
-            _ => unreachable!(),
-        }
-    }
-}
-
-#[derive(
-    PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, serde::Serialize, serde::Deserialize,
-)]
-pub enum FunctionType {
-    NormalFunction = 0,
-    FogFunction,
-    Undefined,
-}
-
-impl From<usize> for FunctionType {
-    fn from(value: usize) -> Self {
-        match value {
-            0 => Self::FogFunction,
-            1 => Self::NormalFunction,
-            2 => Self::Undefined,
+            0 => Self::EnterBlock,
+            1 => Self::LeaveBlock,
             _ => unreachable!(),
         }
     }

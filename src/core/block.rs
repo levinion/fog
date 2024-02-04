@@ -88,7 +88,6 @@ impl Block {
                             break;
                         }
                     }
-                    Decorate::Fog => {}
                 },
                 Some(_) => {}
                 None => panic!("unexpected eos!"),

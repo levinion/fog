@@ -40,7 +40,8 @@ impl Interpreter {
 
         while let Some(code) = block.go_ahead() {
             match code.clone() {
-                ByteCode::CallFunction(argc, t) => self.call_function(argc, t).await?,
+                ByteCode::CallFunction(argc) => self.call_function(argc).await?,
+                ByteCode::FogCallFunction(argc) => self.fog_call_function(argc).await?,
                 ByteCode::CallMethod(argc) => self.call_method(argc)?,
                 ByteCode::LoadValue(value) => self.load_value(value),
                 ByteCode::StoreLocal => self.store_local(),

@@ -15,7 +15,14 @@ pub struct _Token {
     pub end: Offset,
 }
 
-pub type Token = Rc<_Token>;
+#[derive(PartialEq, Debug, Clone)]
+pub struct Token(pub Rc<_Token>);
+
+impl Token {
+    pub fn new(val: TokenVal, start: Offset, end: Offset) -> Self {
+        Self(Rc::new(_Token::new(val, start, end)))
+    }
+}
 
 impl _Token {
     pub fn new(val: TokenVal, start: Offset, end: Offset) -> Self {

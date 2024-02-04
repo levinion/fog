@@ -8,7 +8,7 @@ use crate::{
     complier::lexer::token_stream::TokenStream,
     core::{
         block::{Block, BlockType},
-        bytecode::{ByteCode, Decorate, FunctionType},
+        bytecode::{ByteCode, Decorate},
         token::TokenVal,
         value::Type,
         value::Value,
@@ -41,7 +41,7 @@ impl Parser {
         self.blocks.push(root.clone());
         loop {
             let token = self.stream.look_ahead(1);
-            match &token.val {
+            match &token.0.val {
                 TokenVal::Import => self.include(&root, &path),
                 TokenVal::Name(name) => self.load_name(&mut root, name.clone()),
                 // let a = 1;
@@ -93,7 +93,7 @@ impl Parser {
     // eg: fn test(a, b){...}
     pub fn parse_blocks(&mut self, father: &Block, path: PathBuf) {
         let token = self.stream.look_ahead(1);
-        match &token.val {
+        match &token.0.val {
             // eg: fn test(a,b){do something here}
             TokenVal::Fn => {
                 self.stream.next();
@@ -116,7 +116,7 @@ impl Parser {
         self.assert_next(TokenVal::ParL);
         loop {
             let token = self.stream.look_ahead(1);
-            match token.val.clone() {
+            match token.0.val.clone() {
                 TokenVal::Name(name) => {
                     self.stream.next();
                     self.assert_next(TokenVal::Colon);
@@ -141,10 +141,10 @@ impl Parser {
         self.assert_next(TokenVal::CurlyL);
         loop {
             let token = self.stream.look_ahead(1);
-            match token.val {
+            match token.0.val {
                 TokenVal::Name(_) => {
                     let token = self.stream.look_ahead(2);
-                    match token.val {
+                    match token.0.val {
                         TokenVal::Assign => self.assign_local(block),
                         TokenVal::ParL => self.call_function(block),
                         _ => todo!(),
@@ -152,7 +152,7 @@ impl Parser {
                 }
                 TokenVal::Let => self.define_local(block),
                 TokenVal::If => self.enter_if(block),
-                TokenVal::Fog => self.handle_fog(block),
+                TokenVal::Fog => self.fog_call_function(block),
                 TokenVal::Eos => panic!("eos!"),
                 TokenVal::CurlyR => break,
                 TokenVal::Assign => self.assign_local(block),
@@ -167,11 +167,6 @@ impl Parser {
         block.byte_codes.push(ByteCode::LoadValue(value));
     }
 
-    fn handle_fog(&mut self, block: &mut Block) {
-        self.stream.next();
-        block.byte_codes.push(ByteCode::Decorate(Decorate::Fog));
-    }
-
     /// call normal function with name
     /// eg: print(a, b);
     fn call_function(&mut self, block: &mut Block) {
@@ -184,9 +179,19 @@ impl Parser {
         self.assert_next(TokenVal::ParR);
         self.assert_next(TokenVal::SemiColon);
         // call function
-        block
-            .byte_codes
-            .push(ByteCode::CallFunction(argc, FunctionType::Undefined));
+        block.byte_codes.push(ByteCode::CallFunction(argc));
+    }
+
+    fn fog_call_function(&mut self, block: &mut Block) {
+        self.stream.next();
+        let (name, name_t) = self.assert_next_name();
+        self.load_name(block, name);
+        self.assert_next(TokenVal::ParL);
+        block.byte_codes.push(ByteCode::LoadName);
+        let argc = self.load_exps(block);
+        self.assert_next(TokenVal::ParR);
+        self.assert_next(TokenVal::SemiColon);
+        block.byte_codes.push(ByteCode::FogCallFunction(argc));
     }
 
     // eg: value.method(exps);
