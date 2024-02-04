@@ -1,8 +1,8 @@
 mod coliner;
 pub mod token_stream;
-use std::io::prelude::*;
+use std::{io::prelude::*, rc::Rc};
 
-use crate::core::token::{Token, TokenVal};
+use crate::core::token::{Token, TokenVal, _Token};
 
 use self::{coliner::Coliner, token_stream::TokenStream};
 
@@ -88,7 +88,7 @@ impl<T: Read + Seek> Lexer<T> {
             _ => todo!(),
         };
         let end = self.coliner.current();
-        Token::new(token, start, end)
+        Rc::new(_Token::new(token, start, end))
     }
 
     // read a name or keyword

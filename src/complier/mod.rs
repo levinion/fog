@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use crate::core::{block::Block, ir::IR1};
 
 use self::{lexer::Lexer, parser::Parser};
-use std::{fs::File, io::Cursor, path::PathBuf};
+use std::{fs::File, path::PathBuf};
 
 pub fn complie_project(root: &str) -> Result<IR1> {
     let blocks = complie_file(root, None)?;

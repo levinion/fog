@@ -1,15 +1,14 @@
 mod assert;
 mod control_flow;
 mod exp;
-mod wrapper;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::{
     complier::lexer::token_stream::TokenStream,
     core::{
         block::{Block, BlockType},
-        bytecode::{Decorate, FunctionType},
+        bytecode::{ByteCode, Decorate, FunctionType},
         token::TokenVal,
         value::Type,
         value::Value,
@@ -19,49 +18,48 @@ use crate::{
 #[derive(Debug)]
 pub struct Parser {
     stream: TokenStream,
+    blocks: Vec<Block>,
 }
 
 impl From<TokenStream> for Parser {
     fn from(value: TokenStream) -> Self {
-        Self { stream: value }
+        Self {
+            stream: value,
+            blocks: vec![],
+        }
     }
 }
 
 impl Parser {
     /// parse all file to a block
-    pub fn parse_file(
-        &mut self,
-        name: String,
-        path: PathBuf,
-        father: Option<&Block>,
-    ) -> Vec<Block> {
+    pub fn parse_file(mut self, name: String, path: PathBuf, father: Option<&Block>) -> Vec<Block> {
         let mut root = if let Some(father) = father {
             Block::inherite(father, name, path.clone(), BlockType::File, vec![])
         } else {
             Block::new(name, path.clone(), BlockType::File, vec![])
         };
-        let mut blocks = vec![root.clone()];
+        self.blocks.push(root.clone());
         loop {
             let token = self.stream.look_ahead(1);
             match &token.val {
-                TokenVal::Import => self.include(&root, &path, &mut blocks),
+                TokenVal::Import => self.include(&root, &path),
                 TokenVal::Name(name) => self.load_name(&mut root, name.clone()),
                 // let a = 1;
                 TokenVal::Let => self.define_local(&mut root),
                 // fn main(...)
-                TokenVal::Fn => self.parse_blocks(&root, path.clone(), &mut blocks),
+                TokenVal::Fn => self.parse_blocks(&root, path.clone()),
                 TokenVal::Eos => break,
                 _ => panic!("unexpected token: {:?}", token),
             }
         }
-        blocks
+        self.blocks
     }
 
-    pub fn include(&mut self, father: &Block, path: &PathBuf, blocks: &mut Vec<Block>) {
+    pub fn include(&mut self, father: &Block, path: &Path) {
         self.stream.next();
         let (name, token) = self.assert_next_name();
         let (possible_path1_exists, r1) = {
-            let mut path = path.clone();
+            let mut path = path.to_path_buf();
             path.set_extension("");
             let dir_name = path.join(&name);
             let filename = path.join("mod.fog");
@@ -88,12 +86,12 @@ impl Parser {
             }
         };
         let mut result = crate::complier::complie_file(&name, Some(father)).unwrap();
-        blocks.append(&mut result);
+        self.blocks.append(&mut result);
     }
 
     /// parse blocks
     // eg: fn test(a, b){...}
-    pub fn parse_blocks(&mut self, father: &Block, path: PathBuf, blocks: &mut Vec<Block>) {
+    pub fn parse_blocks(&mut self, father: &Block, path: PathBuf) {
         let token = self.stream.look_ahead(1);
         match &token.val {
             // eg: fn test(a,b){do something here}
@@ -104,7 +102,7 @@ impl Parser {
                 let mut block = Block::inherite(father, name, path, BlockType::Fn, args.clone());
                 block.args = args;
                 self.parse_bucket(&mut block);
-                blocks.push(block);
+                self.blocks.push(block);
             }
             token => panic!("invalid block! found token: {token:?}"),
         }
@@ -118,7 +116,7 @@ impl Parser {
         self.assert_next(TokenVal::ParL);
         loop {
             let token = self.stream.look_ahead(1);
-            match token.clone().val {
+            match token.val.clone() {
                 TokenVal::Name(name) => {
                     self.stream.next();
                     self.assert_next(TokenVal::Colon);
@@ -166,12 +164,12 @@ impl Parser {
 
     fn load_name(&mut self, block: &mut Block, name: String) {
         let value = Value::Name(name);
-        wrapper::load_value(block, value);
+        block.byte_codes.push(ByteCode::LoadValue(value));
     }
 
     fn handle_fog(&mut self, block: &mut Block) {
         self.stream.next();
-        wrapper::decorate(block, Decorate::Fog);
+        block.byte_codes.push(ByteCode::Decorate(Decorate::Fog));
     }
 
     /// call normal function with name
@@ -180,30 +178,34 @@ impl Parser {
         let (name, name_t) = self.assert_next_name();
         self.load_name(block, name);
         self.assert_next(TokenVal::ParL);
-        wrapper::load_name(block);
+        block.byte_codes.push(ByteCode::LoadName);
         // get args
         let argc = self.load_exps(block);
         self.assert_next(TokenVal::ParR);
         self.assert_next(TokenVal::SemiColon);
         // call function
-        wrapper::call_function(block, argc, FunctionType::Undefined);
+        block
+            .byte_codes
+            .push(ByteCode::CallFunction(argc, FunctionType::Undefined));
     }
 
     // eg: value.method(exps);
     fn call_method(&mut self, block: &mut Block) {
         let (name, name_t) = self.assert_next_name();
         self.load_name(block, name);
-        wrapper::load_name(block);
+        block.byte_codes.push(ByteCode::LoadName);
         self.assert_next(TokenVal::Dot);
         // get method name
         let (name, name_t) = self.assert_next_name();
-        wrapper::load_value(block, Value::String(name));
+        block
+            .byte_codes
+            .push(ByteCode::LoadValue(Value::String(name)));
         self.assert_next(TokenVal::ParL);
         // get args
         let argc = self.load_exps(block);
         self.assert_next(TokenVal::ParR);
         self.assert_next(TokenVal::SemiColon);
-        wrapper::call_method(block, argc);
+        block.byte_codes.push(ByteCode::CallMethod(argc));
     }
 
     /// define a local variable
@@ -212,10 +214,12 @@ impl Parser {
         self.assert_next(TokenVal::Let);
         let (name, name_t) = self.assert_next_name();
         self.assert_next(TokenVal::Assign);
-        wrapper::load_value(block, Value::Name(name));
+        block
+            .byte_codes
+            .push(ByteCode::LoadValue(Value::Name(name)));
         self.load_exp(block);
         self.assert_next(TokenVal::SemiColon);
-        wrapper::store_local(block);
+        block.byte_codes.push(ByteCode::StoreLocal);
     }
 
     /// assign a local variable
@@ -225,7 +229,7 @@ impl Parser {
         self.load_name(block, name);
         self.assert_next(TokenVal::Assign);
         self.load_exp(block);
+        block.byte_codes.push(ByteCode::StoreLocal);
         self.assert_next(TokenVal::SemiColon);
-        wrapper::store_local(block);
     }
 }

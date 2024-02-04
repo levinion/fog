@@ -12,7 +12,7 @@ impl Parser {
 
     pub fn assert_next_string(&mut self) -> (String, Token) {
         let token = self.stream.next();
-        if let TokenVal::String(s) = token.clone().val {
+        if let TokenVal::String(s) = token.val.clone() {
             (s, token)
         } else {
             panic!("expect a string!")
@@ -21,7 +21,7 @@ impl Parser {
 
     pub fn assert_next_name(&mut self) -> (String, Token) {
         let token = self.stream.next();
-        if let TokenVal::Name(s) = token.clone().val {
+        if let TokenVal::Name(s) = token.val.clone() {
             (s, token)
         } else {
             panic!("expect a name!")

@@ -8,14 +8,14 @@ use crate::core::{
     value::Value,
 };
 
-use super::{wrapper, Parser};
+use super::Parser;
 
 impl Parser {
     pub fn load_exp(&mut self, block: &mut Block) {
         let output = self.handle_infix();
         let mut op_count: usize = 0; // count there is how many values on the stack
         for token in output.into_iter() {
-            match token.val {
+            match token.val.clone() {
                 TokenVal::Add => self.auto_op(block, &mut op_count, TokenVal::Add),
                 TokenVal::Sub => self.auto_op(block, &mut op_count, TokenVal::Sub),
                 TokenVal::Mul => self.auto_op(block, &mut op_count, TokenVal::Mul),
@@ -27,20 +27,22 @@ impl Parser {
                 TokenVal::GreEq => self.auto_op(block, &mut op_count, TokenVal::GreEq),
                 TokenVal::LesEq => self.auto_op(block, &mut op_count, TokenVal::LesEq),
                 TokenVal::String(s) => {
-                    wrapper::load_value(block, Value::String(s));
+                    block.byte_codes.push(ByteCode::LoadValue(Value::String(s)));
                     op_count += 1;
                 }
                 TokenVal::Name(name) => {
-                    wrapper::load_value(block, Value::Name(name));
-                    wrapper::load_name(block);
+                    block
+                        .byte_codes
+                        .push(ByteCode::LoadValue(Value::Name(name)));
+                    block.byte_codes.push(ByteCode::LoadName);
                     op_count += 1;
                 }
                 TokenVal::Int(i) => {
-                    wrapper::load_value(block, Value::Int(i));
+                    block.byte_codes.push(ByteCode::LoadValue(Value::Int(i)));
                     op_count += 1;
                 }
                 TokenVal::Float(f) => {
-                    wrapper::load_value(block, Value::Float(f));
+                    block.byte_codes.push(ByteCode::LoadValue(Value::Float(f)));
                     op_count += 1;
                 }
                 token => panic!("unexpected token: {:?}", token),

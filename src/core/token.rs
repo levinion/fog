@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use super::op::InfixBinaryOP;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -7,13 +9,15 @@ pub struct Offset {
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Token {
+pub struct _Token {
     pub val: TokenVal,
     pub start: Offset,
     pub end: Offset,
 }
 
-impl Token {
+pub type Token = Rc<_Token>;
+
+impl _Token {
     pub fn new(val: TokenVal, start: Offset, end: Offset) -> Self {
         Self { val, start, end }
     }

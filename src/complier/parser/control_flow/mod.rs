@@ -1,6 +1,10 @@
-use crate::core::{block::Block, token::TokenVal};
+use crate::core::{
+    block::Block,
+    bytecode::{ByteCode, Decorate},
+    token::TokenVal,
+};
 
-use super::{wrapper, Parser};
+use super::Parser;
 
 impl Parser {
     /// enter if block
@@ -8,15 +12,19 @@ impl Parser {
     pub fn enter_if(&mut self, block: &mut Block) {
         self.assert_next(TokenVal::If);
         self.load_exp(block);
-        wrapper::jump_if_false(block);
+        block.byte_codes.push(ByteCode::JumpIfFalse);
         self.parse_block(block);
     }
 
     /// parse statement in the block
     /// [{...}]
     pub fn parse_block(&mut self, block: &mut Block) {
-        wrapper::enter_block(block);
+        block
+            .byte_codes
+            .push(ByteCode::Decorate(Decorate::EnterBlock));
         self.parse_bucket(block);
-        wrapper::leave_block(block);
+        block
+            .byte_codes
+            .push(ByteCode::Decorate(Decorate::LeaveBlock));
     }
 }
