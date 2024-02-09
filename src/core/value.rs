@@ -16,6 +16,7 @@ pub enum Value {
     Float(f64),
     #[serde(skip)]
     Function(Function),
+    Void(()),
 }
 
 impl Display for Value {
@@ -31,6 +32,7 @@ impl Display for Value {
                 Function::MetaFunction(name) => write!(f, "{:?}", name),
             },
             Value::Type(t) => write!(f, "{:?}", t),
+            Value::Void(v) => write!(f, "{:?}", v),
         }
     }
 }
@@ -45,6 +47,7 @@ impl Value {
             Value::Float(_) => Type::Float,
             Value::Function(_) => Type::Function,
             Value::Type(_) => Type::Type,
+            Value::Void(_) => Type::Void,
         }
     }
 }
@@ -66,6 +69,7 @@ pub enum Type {
     Float,
     Function,
     Type,
+    Void,
 }
 
 impl From<String> for Type {
@@ -78,5 +82,15 @@ impl From<String> for Type {
             "fn" => Type::Function,
             _ => unreachable!(),
         }
+    }
+}
+
+pub trait IsType {
+    fn is_type(&self) -> bool;
+}
+
+impl IsType for String {
+    fn is_type(&self) -> bool {
+        matches!(self as &str, "string" | "bool" | "int" | "float" | "fn")
     }
 }

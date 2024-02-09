@@ -8,7 +8,7 @@ use crate::{
     complier::lexer::token_stream::TokenStream,
     core::{
         block::{Block, BlockType},
-        bytecode::{ByteCode, Decorate},
+        bytecode::ByteCode,
         token::TokenVal,
         value::Type,
         value::Value,
@@ -57,7 +57,7 @@ impl Parser {
 
     pub fn include(&mut self, father: &Block, path: &Path) {
         self.stream.next();
-        let (name, token) = self.assert_next_name();
+        let name = self.assert_next_name();
         let (possible_path1_exists, r1) = {
             let mut path = path.to_path_buf();
             path.set_extension("");
@@ -97,7 +97,7 @@ impl Parser {
             // eg: fn test(a,b){do something here}
             TokenVal::Fn => {
                 self.stream.next();
-                let (name, name_t) = self.assert_next_name();
+                let name = self.assert_next_name();
                 let args = self.parse_fn_args_to_vec();
                 let mut block = Block::inherite(father, name, path, BlockType::Fn, args.clone());
                 block.args = args;
@@ -120,8 +120,8 @@ impl Parser {
                 TokenVal::Name(name) => {
                     self.stream.next();
                     self.assert_next(TokenVal::Colon);
-                    let (typ, typ_t) = self.assert_next_name();
-                    args.push((name, typ.into()));
+                    let typ = self.assert_next_type();
+                    args.push((name, typ));
                 }
                 TokenVal::ParR => break,
                 TokenVal::Comma => self.assert_next(TokenVal::Comma),
@@ -170,7 +170,7 @@ impl Parser {
     /// call normal function with name
     /// eg: print(a, b);
     fn call_function(&mut self, block: &mut Block) {
-        let (name, name_t) = self.assert_next_name();
+        let name = self.assert_next_name();
         self.load_name(block, name);
         self.assert_next(TokenVal::ParL);
         block.byte_codes.push(ByteCode::LoadName);
@@ -184,7 +184,7 @@ impl Parser {
 
     fn fog_call_function(&mut self, block: &mut Block) {
         self.stream.next();
-        let (name, name_t) = self.assert_next_name();
+        let name = self.assert_next_name();
         self.load_name(block, name);
         self.assert_next(TokenVal::ParL);
         block.byte_codes.push(ByteCode::LoadName);
@@ -195,33 +195,33 @@ impl Parser {
     }
 
     // eg: value.method(exps);
-    fn call_method(&mut self, block: &mut Block) {
-        let (name, name_t) = self.assert_next_name();
-        self.load_name(block, name);
-        block.byte_codes.push(ByteCode::LoadName);
-        self.assert_next(TokenVal::Dot);
-        // get method name
-        let (name, name_t) = self.assert_next_name();
-        block
-            .byte_codes
-            .push(ByteCode::LoadValue(Value::String(name)));
-        self.assert_next(TokenVal::ParL);
-        // get args
-        let argc = self.load_exps(block);
-        self.assert_next(TokenVal::ParR);
-        self.assert_next(TokenVal::SemiColon);
-        block.byte_codes.push(ByteCode::CallMethod(argc));
-    }
+    // fn call_method(&mut self, block: &mut Block) {
+    //     let name = self.assert_next_name();
+    //     self.load_name(block, name);
+    //     block.byte_codes.push(ByteCode::LoadName);
+    //     self.assert_next(TokenVal::Dot);
+    //     // get method name
+    //     let name = self.assert_next_name();
+    //     block
+    //         .byte_codes
+    //         .push(ByteCode::LoadValue(Value::String(name)));
+    //     self.assert_next(TokenVal::ParL);
+    //     // get args
+    //     let argc = self.load_exps(block);
+    //     self.assert_next(TokenVal::ParR);
+    //     self.assert_next(TokenVal::SemiColon);
+    //     block.byte_codes.push(ByteCode::CallMethod(argc));
+    // }
 
     /// define a local variable
     /// eg: let a = "hello world";
     fn define_local(&mut self, block: &mut Block) {
         self.assert_next(TokenVal::Let);
-        let (name, name_t) = self.assert_next_name();
-        self.assert_next(TokenVal::Assign);
+        let name = self.assert_next_name();
         block
             .byte_codes
             .push(ByteCode::LoadValue(Value::Name(name)));
+        self.assert_next(TokenVal::Assign);
         self.load_exp(block);
         self.assert_next(TokenVal::SemiColon);
         block.byte_codes.push(ByteCode::StoreLocal);
@@ -230,7 +230,7 @@ impl Parser {
     /// assign a local variable
     /// eg: a = "hi";
     fn assign_local(&mut self, block: &mut Block) {
-        let (name, name_t) = self.assert_next_name();
+        let name = self.assert_next_name();
         self.load_name(block, name);
         self.assert_next(TokenVal::Assign);
         self.load_exp(block);

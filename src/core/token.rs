@@ -1,11 +1,17 @@
-use std::rc::Rc;
+use std::{fmt::Display, rc::Rc};
 
-use super::op::InfixBinaryOP;
+use super::{op::InfixBinaryOP, value::Type};
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Offset {
     pub row: usize,
     pub col: usize,
+}
+
+impl Display for Offset {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.row, self.col)
+    }
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -83,6 +89,7 @@ pub enum TokenVal {
     Colon,          // :
     Import,         // import
     Use,            // use
+    Type(Type),
 }
 
 impl From<InfixBinaryOP> for TokenVal {

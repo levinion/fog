@@ -35,10 +35,10 @@ impl Interpreter {
 
     pub fn binary_op(&mut self, op: BinaryOP) -> Result<()> {
         let second_value = self.stack.pop_back().unwrap();
-        let fblockst_value = self.stack.pop_back().unwrap();
+        let first_value = self.stack.pop_back().unwrap();
 
         let new_value = match op {
-            BinaryOP::Add => match fblockst_value {
+            BinaryOP::Add => match first_value {
                 Value::Float(f1) => match second_value {
                     Value::Float(f2) => Value::Float(f1 + f2),
                     _ => invalid_type!(),
@@ -51,9 +51,19 @@ impl Interpreter {
                     Value::String(s2) => Value::String(s1 + s2.as_str()),
                     _ => invalid_type!(),
                 },
+                Value::Type(t1) => match second_value {
+                    Value::Type(t2) => {
+                        if t1 == t2 {
+                            Value::Type(t1)
+                        } else {
+                            invalid_type!()
+                        }
+                    }
+                    _ => invalid_type!(),
+                },
                 _ => invalid_type!(),
             },
-            BinaryOP::Sub => match fblockst_value {
+            BinaryOP::Sub => match first_value {
                 Value::Float(f1) => match second_value {
                     Value::Float(f2) => Value::Float(f1 - f2),
                     _ => invalid_type!(),
@@ -62,9 +72,19 @@ impl Interpreter {
                     Value::Int(i2) => Value::Int(i1 - i2),
                     _ => invalid_type!(),
                 },
+                Value::Type(t1) => match second_value {
+                    Value::Type(t2) => {
+                        if t1 == t2 {
+                            Value::Type(t1)
+                        } else {
+                            invalid_type!()
+                        }
+                    }
+                    _ => invalid_type!(),
+                },
                 _ => invalid_type!(),
             },
-            BinaryOP::Mul => match fblockst_value {
+            BinaryOP::Mul => match first_value {
                 Value::Float(f1) => match second_value {
                     Value::Float(f2) => Value::Float(f1 * f2),
                     _ => invalid_type!(),
@@ -73,9 +93,19 @@ impl Interpreter {
                     Value::Int(i2) => Value::Int(i1 * i2),
                     _ => invalid_type!(),
                 },
+                Value::Type(t1) => match second_value {
+                    Value::Type(t2) => {
+                        if t1 == t2 {
+                            Value::Type(t1)
+                        } else {
+                            invalid_type!()
+                        }
+                    }
+                    _ => invalid_type!(),
+                },
                 _ => invalid_type!(),
             },
-            BinaryOP::Div => match fblockst_value {
+            BinaryOP::Div => match first_value {
                 Value::Float(f1) => match second_value {
                     Value::Float(f2) => Value::Float(f1 / f2),
                     _ => invalid_type!(),
@@ -84,14 +114,24 @@ impl Interpreter {
                     Value::Int(i2) => Value::Int(i1 / i2),
                     _ => invalid_type!(),
                 },
+                Value::Type(t1) => match second_value {
+                    Value::Type(t2) => {
+                        if t1 == t2 {
+                            Value::Type(t1)
+                        } else {
+                            invalid_type!()
+                        }
+                    }
+                    _ => invalid_type!(),
+                },
                 _ => invalid_type!(),
             },
-            BinaryOP::Equal => Value::Bool(fblockst_value == second_value),
-            BinaryOP::NotEq => Value::Bool(fblockst_value != second_value),
-            BinaryOP::Greater => Value::Bool(fblockst_value > second_value),
-            BinaryOP::Less => Value::Bool(fblockst_value < second_value),
-            BinaryOP::GreEq => Value::Bool(fblockst_value >= second_value),
-            BinaryOP::LesEq => Value::Bool(fblockst_value <= second_value),
+            BinaryOP::Equal => Value::Bool(first_value == second_value),
+            BinaryOP::NotEq => Value::Bool(first_value != second_value),
+            BinaryOP::Greater => Value::Bool(first_value > second_value),
+            BinaryOP::Less => Value::Bool(first_value < second_value),
+            BinaryOP::GreEq => Value::Bool(first_value >= second_value),
+            BinaryOP::LesEq => Value::Bool(first_value <= second_value),
         };
         self.stack.push_back(new_value);
         Ok(())

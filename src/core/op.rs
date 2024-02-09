@@ -43,12 +43,11 @@ impl InfixBinaryOP {
         match *self {
             InfixBinaryOP::Add | InfixBinaryOP::Sub => 2,
             InfixBinaryOP::Mul | InfixBinaryOP::Div => 4,
-            InfixBinaryOP::Equal
-            | InfixBinaryOP::NotEq
-            | InfixBinaryOP::Greater
+            InfixBinaryOP::Equal | InfixBinaryOP::NotEq => 7,
+            InfixBinaryOP::Greater
             | InfixBinaryOP::Less
             | InfixBinaryOP::GreEq
-            | InfixBinaryOP::LesEq => 8,
+            | InfixBinaryOP::LesEq => 6,
             InfixBinaryOP::ParR | InfixBinaryOP::ParL => 1,
         }
     }

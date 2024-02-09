@@ -2,7 +2,10 @@ mod coliner;
 pub mod token_stream;
 use std::io::prelude::{Read, Seek};
 
-use crate::core::token::{Token, TokenVal};
+use crate::core::{
+    token::{Token, TokenVal},
+    value::Type,
+};
 
 use self::{coliner::Coliner, token_stream::TokenStream};
 
@@ -125,6 +128,12 @@ impl<T: Read + Seek> Lexer<T> {
             "fog" => TokenVal::Fog,
             "import" => TokenVal::Import,
             "use" => TokenVal::Use,
+            "int" => TokenVal::Type(Type::Int),
+            "float" => TokenVal::Type(Type::Float),
+            "string" => TokenVal::Type(Type::String),
+            "bool" => TokenVal::Type(Type::Bool),
+            "type" => TokenVal::Type(Type::Type),
+            "func" => TokenVal::Type(Type::Function),
             _ => TokenVal::Name(s),
         }
     }

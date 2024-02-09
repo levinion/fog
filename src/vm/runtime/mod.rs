@@ -1,26 +1,16 @@
 pub mod global;
-mod method;
-
+use self::global::GlobalItem;
+use crate::core::{ir::IR2, namespace::NameSpace};
 use std::collections::HashMap;
-
-use crate::core::{
-    ir::IR2,
-    namespace::NameSpace,
-    value::{Args, Type},
-};
-
-use self::{global::GlobalItem, method::init_method_table};
 
 pub struct Runtime {
     global_table: HashMap<String, GlobalItem>,
-    method_table: HashMap<Type, fn(Args) -> i32>,
 }
 
 impl Runtime {
     pub fn new() -> Self {
         Self {
             global_table: global::init_global_table(), // global functions defined here
-            method_table: init_method_table(),
         }
     }
 

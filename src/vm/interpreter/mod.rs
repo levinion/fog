@@ -14,8 +14,8 @@ use crate::core::{
 
 /// An Interpreter is an instance that executes a block.
 pub struct Interpreter {
-    stack: VecDeque<Value>,
-    local_table: HashMap<String, Value>,
+    pub stack: VecDeque<Value>,
+    pub local_table: HashMap<String, Value>,
 }
 
 impl Interpreter {

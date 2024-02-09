@@ -57,7 +57,7 @@ impl Interpreter {
         if let Value::Name(s) = name {
             self.local_table.insert(s, value);
         } else {
-            panic!("a name is needed!")
+            panic!("a name is needed! found: {:?}", name)
         }
     }
 

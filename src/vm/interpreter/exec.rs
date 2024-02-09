@@ -10,7 +10,8 @@ impl Interpreter {
         if let Value::Function(func) = self.stack.pop_back().unwrap() {
             match func {
                 Function::MetaFunction(meta) => {
-                    meta(args);
+                    let r = meta(args);
+                    self.stack.push_back(r?);
                 }
                 Function::NormalFunction(block) => {
                     let mut new_interpreter = Interpreter::new();
@@ -29,7 +30,7 @@ impl Interpreter {
             match func {
                 Function::MetaFunction(meta) => {
                     tokio::spawn(async move {
-                        meta(args);
+                        meta(args).unwrap();
                     });
                 }
                 Function::NormalFunction(block) => {
@@ -55,15 +56,17 @@ impl Interpreter {
         args
     }
 
+    // alias of call_function
+    // a.b(...args) = b(a,...args) if fn b(self: a, ...args)
     pub fn call_method(&mut self, argc: usize) -> Result<()> {
-        let args = self.collect_args(argc);
-        // method name
-        let name = if let Value::String(name) = self.stack.pop_back().unwrap() {
-            name
-        } else {
-            return Err(anyhow!("invalid function name type"));
-        };
-        let value = self.stack.pop_back().unwrap();
+        // let args = self.collect_args(argc);
+        // // method name
+        // let name = if let Value::String(name) = self.stack.pop_back().unwrap() {
+        //     name
+        // } else {
+        //     return Err(anyhow!("invalid function name type"));
+        // };
+        // let value = self.stack.pop_back().unwrap();
         Ok(())
     }
 }

@@ -14,7 +14,7 @@ impl Parser {
     pub fn load_exp(&mut self, block: &mut Block) {
         let output = self.handle_infix();
         let mut op_count: usize = 0; // count there is how many values on the stack
-        for token in output.into_iter() {
+        for token in output.iter() {
             match token.0.val.clone() {
                 TokenVal::Add => self.auto_op(block, &mut op_count, TokenVal::Add),
                 TokenVal::Sub => self.auto_op(block, &mut op_count, TokenVal::Sub),
@@ -26,10 +26,6 @@ impl Parser {
                 TokenVal::Less => self.auto_op(block, &mut op_count, TokenVal::Less),
                 TokenVal::GreEq => self.auto_op(block, &mut op_count, TokenVal::GreEq),
                 TokenVal::LesEq => self.auto_op(block, &mut op_count, TokenVal::LesEq),
-                TokenVal::String(s) => {
-                    block.byte_codes.push(ByteCode::LoadValue(Value::String(s)));
-                    op_count += 1;
-                }
                 TokenVal::Name(name) => {
                     block
                         .byte_codes
@@ -45,6 +41,16 @@ impl Parser {
                     block.byte_codes.push(ByteCode::LoadValue(Value::Float(f)));
                     op_count += 1;
                 }
+                TokenVal::String(s) => {
+                    block.byte_codes.push(ByteCode::LoadValue(Value::String(s)));
+                    op_count += 1;
+                }
+                TokenVal::Type(typ) => {
+                    block.byte_codes.push(ByteCode::LoadValue(Value::Type(typ)));
+                    op_count += 1;
+                }
+                // TODO: Support functions that may have more than 1 argc
+                TokenVal::ParR => block.byte_codes.push(ByteCode::CallFunction(1)),
                 token => panic!("unexpected token: {:?}", token),
             }
         }

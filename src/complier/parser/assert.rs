@@ -1,30 +1,56 @@
-use crate::core::token::{Token, TokenVal};
+use crate::core::{token::TokenVal, value::Type};
 
 use super::Parser;
 
 impl Parser {
     // next token should be that, or it will panic
     pub fn assert_next(&mut self, value: TokenVal) {
-        if self.stream.next().0.val != value {
-            panic!("expect token: {value:?}")
-        }
-    }
-
-    pub fn assert_next_string(&mut self) -> (String, Token) {
         let token = self.stream.next();
-        if let TokenVal::String(s) = token.0.val.clone() {
-            (s, token)
-        } else {
-            panic!("expect a string!")
+        if token.0.val != value {
+            panic!(
+                "expect {value:?}! Found {:?} in {:?}",
+                token.0.val,
+                format!("{}-{}", token.0.start, token.0.end)
+            )
         }
     }
 
-    pub fn assert_next_name(&mut self) -> (String, Token) {
+    // pub fn assert_next_string(&mut self) -> String {
+    //     let token = self.stream.next();
+    //     if let TokenVal::String(s) = token.0.val.clone() {
+    //         s
+    //     } else {
+    //         panic!(
+    //             "expect a string! Found {:?} in {:?}",
+    //             token.0.val,
+    //             format!("{}-{}", token.0.start, token.0.end)
+    //         )
+    //     }
+    // }
+
+    pub fn assert_next_type(&mut self) -> Type {
+        let token = self.stream.next();
+        if let TokenVal::Type(s) = token.0.val.clone() {
+            s
+        } else {
+            panic!(
+                "expect a name! Found {:?} in {:?}",
+                token.0.val,
+                format!("{}-{}", token.0.start, token.0.end)
+            )
+        }
+    }
+
+    pub fn assert_next_name(&mut self) -> String {
         let token = self.stream.next();
         if let TokenVal::Name(s) = token.0.val.clone() {
-            (s, token)
+            s
         } else {
-            panic!("expect a name!")
+            panic!(
+                "expect a name! Found {:?} in {:?}",
+                token.0.val,
+                format!("{}-{}", token.0.start, token.0.end)
+            )
         }
     }
 }
