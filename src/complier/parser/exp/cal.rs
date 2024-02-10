@@ -15,7 +15,11 @@ impl Parser {
         loop {
             let token = self.stream.look_ahead(1);
             match token.0.val {
-                TokenVal::Int(_) | TokenVal::Float(_) | TokenVal::String(_) | TokenVal::Type(_) => {
+                TokenVal::Int(_)
+                | TokenVal::Float(_)
+                | TokenVal::String(_)
+                | TokenVal::Bool(_)
+                | TokenVal::Type(_) => {
                     output_stack.push(self.stream.next());
                 }
                 TokenVal::Name(_) => {

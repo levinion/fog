@@ -22,6 +22,7 @@ pub fn init_global_table() -> HashMap<String, GlobalItem> {
     global.insert("@sleep".to_string(), GlobalItem::Meta(lib_sleep));
     global.insert("@type".to_string(), GlobalItem::Meta(lib_type));
     global.insert("@debug".to_string(), GlobalItem::Meta(lib_debug));
+    global.insert("@sh".to_string(), GlobalItem::Meta(lib_sh));
     global
 }
 
@@ -70,4 +71,23 @@ pub fn lib_type(args: Args, _block: &Block) -> Result<Value> {
 pub fn lib_debug(_args: Args, block: &Block) -> Result<Value> {
     println!("{:?}", block);
     Ok(Value::Void(()))
+}
+
+pub fn lib_sh(args: Args, _block: &Block) -> Result<Value> {
+    if args.len() != 1 {
+        return Err(anyhow!("Args Length Error: expect 1, found {}", args.len()));
+    }
+    if let Value::String(s) = &args[0] {
+        let s = s.split(' ').collect::<Vec<_>>();
+        std::process::Command::new(s[0])
+            .args(&s[1..])
+            .spawn()
+            .unwrap();
+        Ok(Value::Void(()))
+    } else {
+        Err(anyhow!(
+            "Args Type Error: expect int, found {:?}",
+            &args[0].typ()
+        ))
+    }
 }

@@ -19,7 +19,7 @@ use crate::core::{
 pub struct Interpreter {
     pub stack: VecDeque<Value>,
     pub local_table: HashMap<String, Value>,
-    pub pc: usize,
+    pub pc: isize,
 }
 
 impl Interpreter {
@@ -45,9 +45,11 @@ impl Interpreter {
 
         while let Some(code) = self.go_ahead(&block) {
             match code.clone() {
-                ByteCode::CallFunction(argc) => self.call_function(argc, block.clone()).await?,
+                ByteCode::CallFunction(argc) => {
+                    self.call_function(argc, Arc::clone(&block)).await?
+                }
                 ByteCode::FogCallFunction(argc) => {
-                    self.fog_call_function(argc, block.clone()).await?
+                    self.fog_call_function(argc, Arc::clone(&block)).await?
                 }
                 ByteCode::CallMethod(argc) => self.call_method(argc)?,
                 ByteCode::LoadValue(value) => self.load_value(value),
@@ -55,6 +57,8 @@ impl Interpreter {
                 ByteCode::LoadName => self.load_name(&block).await?,
                 ByteCode::UnaryOP(op) => self.unary_op(op)?,
                 ByteCode::BinaryOP(op) => self.binary_op(op)?,
+                ByteCode::JumpIfFalse(n) => self.jump_if_false(n),
+                ByteCode::Jump(n) => self.jump(n),
                 // ByteCode::Decorate(_) => {
                 //     panic!("decorate should be optimized!")
                 // }
@@ -64,7 +68,7 @@ impl Interpreter {
     }
 
     fn go_ahead<'a>(&'a mut self, block: &'a Block) -> Option<&ByteCode> {
-        let r = block.byte_codes.get(self.pc);
+        let r = block.byte_codes.get(self.pc as usize);
         self.pc += 1;
         r
     }

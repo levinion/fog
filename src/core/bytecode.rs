@@ -7,12 +7,13 @@ use super::{
 pub enum ByteCode {
     LoadName,
     // Decorate(Decorate),
-    CallFunction(usize), // argc,isFogFunction
+    CallFunction(usize), // argc
     FogCallFunction(usize),
     CallMethod(usize),
     LoadValue(Value),
     StoreLocal,
-    // JumpIfFalse,
+    JumpIfFalse(isize),
+    Jump(isize),
     UnaryOP(UnaryOP),
     BinaryOP(BinaryOP),
 }

@@ -73,14 +73,18 @@ impl Interpreter {
         }
     }
 
-    // pub fn jump_if_false(&mut self, block: &mut Block) {
-    //     let b = if let Value::Bool(b) = self.stack.pop_back().unwrap() {
-    //         b
-    //     } else {
-    //         panic!("expected bool!")
-    //     };
-    //     if !b {
-    //         block.jump_block();
-    //     }
-    // }
+    pub fn jump_if_false(&mut self, n: isize) {
+        let b = if let Value::Bool(b) = self.stack.pop_back().unwrap() {
+            b
+        } else {
+            panic!("expected bool!")
+        };
+        if !b {
+            self.pc += n;
+        }
+    }
+
+    pub fn jump(&mut self, n: isize) {
+        self.pc += n;
+    }
 }

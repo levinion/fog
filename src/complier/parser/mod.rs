@@ -33,29 +33,35 @@ impl From<TokenStream> for Parser {
 impl Parser {
     /// parse all file to a block
     pub fn parse_file(mut self, name: String, path: PathBuf, father: Option<&Block>) -> Vec<Block> {
-        let mut root = if let Some(father) = father {
+        let mut block = if let Some(father) = father {
             Block::inherite(father, name, path.clone(), BlockType::File, vec![])
         } else {
             Block::new(name, path.clone(), BlockType::File, vec![])
         };
-        self.blocks.push(root.clone());
         loop {
             let token = self.stream.look_ahead(1);
             match &token.0.val {
-                TokenVal::Import => self.include(&root, &path),
-                TokenVal::Name(name) => self.load_name(&mut root, name.clone()),
+                TokenVal::Import => {
+                    let mut blocks = self.include(&block, &path);
+                    self.blocks.append(&mut blocks);
+                }
+                TokenVal::Name(name) => block.byte_codes.push(self.load_name(name.clone())),
                 // let a = 1;
-                TokenVal::Let => self.define_local(&mut root),
+                TokenVal::Let => block.byte_codes.append(&mut self.define_local()),
                 // fn main(...)
-                TokenVal::Fn => self.parse_blocks(&root, path.clone()),
+                TokenVal::Fn => {
+                    let block = self.parse_block(&block, path.clone());
+                    self.blocks.push(block);
+                }
                 TokenVal::Eos => break,
                 _ => panic!("unexpected token: {:?}", token),
             }
         }
+        self.blocks.push(block);
         self.blocks
     }
 
-    pub fn include(&mut self, father: &Block, path: &Path) {
+    pub fn include(&mut self, father: &Block, path: &Path) -> Vec<Block> {
         self.stream.next();
         let name = self.assert_next_name();
         let (possible_path1_exists, r1) = {
@@ -85,13 +91,12 @@ impl Parser {
                 panic!("no module named: {}", name);
             }
         };
-        let mut result = crate::complier::complie_file(&name, Some(father)).unwrap();
-        self.blocks.append(&mut result);
+        crate::complier::complie_file(&name, Some(father)).unwrap()
     }
 
     /// parse blocks
     // eg: fn test(a, b){...}
-    pub fn parse_blocks(&mut self, father: &Block, path: PathBuf) {
+    pub fn parse_block(&mut self, father: &Block, path: PathBuf) -> Block {
         let token = self.stream.look_ahead(1);
         match &token.0.val {
             // eg: fn test(a,b){do something here}
@@ -101,8 +106,8 @@ impl Parser {
                 let args = self.parse_fn_args_to_vec();
                 let mut block = Block::inherite(father, name, path, BlockType::Fn, args.clone());
                 block.args = args;
-                self.parse_bucket(&mut block);
-                self.blocks.push(block);
+                block.byte_codes.append(&mut self.parse_bucket());
+                block
             }
             token => panic!("invalid block! found token: {token:?}"),
         }
@@ -137,7 +142,8 @@ impl Parser {
     /// Parse a block until meet CurlyR.
     /// This is the true function that handle the logic.
     /// eg: {...}
-    fn parse_bucket(&mut self, block: &mut Block) {
+    fn parse_bucket(&mut self) -> Vec<ByteCode> {
+        let mut codes = vec![];
         self.assert_next(TokenVal::CurlyL);
         loop {
             let token = self.stream.look_ahead(1);
@@ -145,53 +151,60 @@ impl Parser {
                 TokenVal::Name(_) => {
                     let token = self.stream.look_ahead(2);
                     match token.0.val {
-                        TokenVal::Assign => self.assign_local(block),
-                        TokenVal::ParL => self.call_function(block),
+                        TokenVal::Assign => codes.append(&mut self.assign_local()),
+                        TokenVal::ParL => codes.append(&mut self.call_function()),
                         _ => todo!(),
                     }
                 }
-                TokenVal::Let => self.define_local(block),
-                TokenVal::If => todo!(), //self.enter_if(block),
-                TokenVal::Fog => self.fog_call_function(block),
+                TokenVal::Let => codes.append(&mut self.define_local()),
+                TokenVal::If => codes.append(&mut self.parse_if()), //self.enter_if(block),
+                TokenVal::Fog => codes.append(&mut self.fog_call_function()),
                 TokenVal::Eos => panic!("eos!"),
                 TokenVal::CurlyR => break,
-                TokenVal::Assign => self.assign_local(block),
+                TokenVal::Assign => codes.append(&mut self.assign_local()),
                 _ => panic!("unexpected token: {:?}", token),
             }
         }
         self.assert_next(TokenVal::CurlyR);
+        codes
     }
 
-    fn load_name(&mut self, block: &mut Block, name: String) {
+    fn load_name(&mut self, name: String) -> ByteCode {
         let value = Value::Name(name);
-        block.byte_codes.push(ByteCode::LoadValue(value));
+        ByteCode::LoadValue(value)
     }
 
     /// call normal function with name
     /// eg: print(a, b);
-    fn call_function(&mut self, block: &mut Block) {
+    fn call_function(&mut self) -> Vec<ByteCode> {
+        let mut codes = vec![];
         let name = self.assert_next_name();
-        self.load_name(block, name);
+        codes.push(self.load_name(name));
         self.assert_next(TokenVal::ParL);
-        block.byte_codes.push(ByteCode::LoadName);
+        codes.push(ByteCode::LoadName);
         // get args
-        let argc = self.load_exps(block);
+        let (mut c, argc) = self.load_exps();
+        codes.append(&mut c);
         self.assert_next(TokenVal::ParR);
         self.assert_next(TokenVal::SemiColon);
         // call function
-        block.byte_codes.push(ByteCode::CallFunction(argc));
+        codes.push(ByteCode::CallFunction(argc));
+        codes
     }
 
-    fn fog_call_function(&mut self, block: &mut Block) {
+    fn fog_call_function(&mut self) -> Vec<ByteCode> {
+        let mut codes = vec![];
         self.stream.next();
         let name = self.assert_next_name();
-        self.load_name(block, name);
+        codes.push(self.load_name(name));
         self.assert_next(TokenVal::ParL);
-        block.byte_codes.push(ByteCode::LoadName);
-        let argc = self.load_exps(block);
+        codes.push(ByteCode::LoadName);
+        let (mut c, argc) = self.load_exps();
+        codes.append(&mut c);
         self.assert_next(TokenVal::ParR);
         self.assert_next(TokenVal::SemiColon);
-        block.byte_codes.push(ByteCode::FogCallFunction(argc));
+        codes.push(ByteCode::FogCallFunction(argc));
+        codes
     }
 
     // eg: value.method(exps);
@@ -215,26 +228,28 @@ impl Parser {
 
     /// define a local variable
     /// eg: let a = "hello world";
-    fn define_local(&mut self, block: &mut Block) {
+    fn define_local(&mut self) -> Vec<ByteCode> {
+        let mut codes = vec![];
         self.assert_next(TokenVal::Let);
         let name = self.assert_next_name();
-        block
-            .byte_codes
-            .push(ByteCode::LoadValue(Value::Name(name)));
+        codes.push(ByteCode::LoadValue(Value::Name(name)));
         self.assert_next(TokenVal::Assign);
-        self.load_exp(block);
+        codes.append(&mut self.load_exp());
         self.assert_next(TokenVal::SemiColon);
-        block.byte_codes.push(ByteCode::StoreLocal);
+        codes.push(ByteCode::StoreLocal);
+        codes
     }
 
     /// assign a local variable
     /// eg: a = "hi";
-    fn assign_local(&mut self, block: &mut Block) {
+    fn assign_local(&mut self) -> Vec<ByteCode> {
+        let mut codes = vec![];
         let name = self.assert_next_name();
-        self.load_name(block, name);
+        codes.push(self.load_name(name));
         self.assert_next(TokenVal::Assign);
-        self.load_exp(block);
-        block.byte_codes.push(ByteCode::StoreLocal);
+        codes.append(&mut self.load_exp());
+        codes.push(ByteCode::StoreLocal);
         self.assert_next(TokenVal::SemiColon);
+        codes
     }
 }
