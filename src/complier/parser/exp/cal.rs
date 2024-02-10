@@ -8,7 +8,6 @@ use crate::core::{
 use super::Parser;
 
 impl Parser {
-    // TODO: FIX Function Nested
     pub fn handle_infix(&mut self) -> Vec<Token> {
         let mut output_stack: Vec<Token> = Vec::new();
         let mut op_stack: VecDeque<Token> = VecDeque::new();

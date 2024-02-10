@@ -2,7 +2,10 @@ mod exec;
 mod op;
 mod wrapper;
 
-use std::collections::{HashMap, VecDeque};
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+};
 
 use anyhow::Result;
 
@@ -16,6 +19,7 @@ use crate::core::{
 pub struct Interpreter {
     pub stack: VecDeque<Value>,
     pub local_table: HashMap<String, Value>,
+    pub pc: usize,
 }
 
 impl Interpreter {
@@ -23,12 +27,13 @@ impl Interpreter {
         Self {
             stack: VecDeque::new(),
             local_table: HashMap::new(),
+            pc: 0,
         }
     }
 
     #[async_recursion::async_recursion]
     // args: args read by caller
-    pub async fn execute(&mut self, mut block: Block, args: Args) -> Result<()> {
+    pub async fn execute(&mut self, block: Arc<Block>, args: Args) -> Result<()> {
         // handle args here
         block
             .args
@@ -38,22 +43,29 @@ impl Interpreter {
                 self.local_table.insert(name.0.clone(), arg);
             });
 
-        while let Some(code) = block.go_ahead() {
+        while let Some(code) = self.go_ahead(&block) {
             match code.clone() {
-                ByteCode::CallFunction(argc) => self.call_function(argc).await?,
-                ByteCode::FogCallFunction(argc) => self.fog_call_function(argc).await?,
+                ByteCode::CallFunction(argc) => self.call_function(argc, block.clone()).await?,
+                ByteCode::FogCallFunction(argc) => {
+                    self.fog_call_function(argc, block.clone()).await?
+                }
                 ByteCode::CallMethod(argc) => self.call_method(argc)?,
                 ByteCode::LoadValue(value) => self.load_value(value),
                 ByteCode::StoreLocal => self.store_local(),
                 ByteCode::LoadName => self.load_name(&block).await?,
-                ByteCode::JumpIfFalse => self.jump_if_false(&mut block),
                 ByteCode::UnaryOP(op) => self.unary_op(op)?,
                 ByteCode::BinaryOP(op) => self.binary_op(op)?,
-                ByteCode::Decorate(_) => {
-                    panic!("decorate should be optimized!")
-                }
+                // ByteCode::Decorate(_) => {
+                //     panic!("decorate should be optimized!")
+                // }
             }
         }
         Ok(())
+    }
+
+    fn go_ahead<'a>(&'a mut self, block: &'a Block) -> Option<&ByteCode> {
+        let r = block.byte_codes.get(self.pc);
+        self.pc += 1;
+        r
     }
 }

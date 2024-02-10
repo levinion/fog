@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::complier::optimizer;
 
@@ -19,10 +19,10 @@ impl From<Block> for IR1 {
     }
 }
 
-impl From<IR1> for HashMap<String, Block> {
+impl From<IR1> for HashMap<String, Arc<Block>> {
     fn from(value: IR1) -> Self {
         let mut map = HashMap::new();
-        build_blocks(&mut map, &value.0);
+        build_blocks(&mut map, value.0);
         map
     }
 }
@@ -33,14 +33,14 @@ impl From<IR1> for IR2 {
     }
 }
 
-fn build_blocks(map: &mut HashMap<String, Block>, blocks: &[Block]) {
+fn build_blocks(map: &mut HashMap<String, Arc<Block>>, blocks: Vec<Block>) {
     if blocks.is_empty() {
         return;
     }
     for block in blocks {
-        map.insert(block.full_name.clone(), block.clone());
+        map.insert(block.full_name.clone(), Arc::new(block));
     }
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
-pub struct IR2(pub HashMap<String, Block>);
+pub struct IR2(pub HashMap<String, Arc<Block>>);

@@ -151,7 +151,7 @@ impl Parser {
                     }
                 }
                 TokenVal::Let => self.define_local(block),
-                TokenVal::If => self.enter_if(block),
+                TokenVal::If => todo!(), //self.enter_if(block),
                 TokenVal::Fog => self.fog_call_function(block),
                 TokenVal::Eos => panic!("eos!"),
                 TokenVal::CurlyR => break,

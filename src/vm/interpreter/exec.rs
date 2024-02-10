@@ -1,16 +1,21 @@
+use std::sync::Arc;
+
 use anyhow::{anyhow, Result};
 
-use crate::core::value::{Args, Function, Value};
+use crate::core::{
+    block::Block,
+    value::{Args, Function, Value},
+};
 
 use super::Interpreter;
 
 impl Interpreter {
-    pub async fn call_function(&mut self, argc: usize) -> Result<()> {
+    pub async fn call_function(&mut self, argc: usize, block: Arc<Block>) -> Result<()> {
         let args = self.collect_args(argc);
         if let Value::Function(func) = self.stack.pop_back().unwrap() {
             match func {
                 Function::MetaFunction(meta) => {
-                    let r = meta(args);
+                    let r = meta(args, &block);
                     self.stack.push_back(r?);
                 }
                 Function::NormalFunction(block) => {
@@ -24,13 +29,13 @@ impl Interpreter {
         }
     }
 
-    pub async fn fog_call_function(&mut self, argc: usize) -> Result<()> {
+    pub async fn fog_call_function(&mut self, argc: usize, block: Arc<Block>) -> Result<()> {
         let args = self.collect_args(argc);
         if let Value::Function(func) = self.stack.pop_back().unwrap() {
             match func {
                 Function::MetaFunction(meta) => {
                     tokio::spawn(async move {
-                        meta(args).unwrap();
+                        meta(args, &block).unwrap();
                     });
                 }
                 Function::NormalFunction(block) => {

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, process::exit, time::Duration};
+use std::{collections::HashMap, process::exit, sync::Arc, time::Duration};
 
 use anyhow::{anyhow, Result};
 
@@ -9,10 +9,10 @@ use crate::core::{
 
 pub enum GlobalItem {
     Meta(Meta),
-    Block(Block),
+    Block(Arc<Block>),
 }
 
-pub type Meta = fn(Args) -> Result<Value>;
+pub type Meta = fn(Args, block: &Block) -> Result<Value>;
 
 pub fn init_global_table() -> HashMap<String, GlobalItem> {
     let mut global: HashMap<String, GlobalItem> = HashMap::new();
@@ -21,28 +21,29 @@ pub fn init_global_table() -> HashMap<String, GlobalItem> {
     global.insert("@exit".to_string(), GlobalItem::Meta(lib_exit));
     global.insert("@sleep".to_string(), GlobalItem::Meta(lib_sleep));
     global.insert("@type".to_string(), GlobalItem::Meta(lib_type));
+    global.insert("@debug".to_string(), GlobalItem::Meta(lib_debug));
     global
 }
 
-pub fn lib_println(args: Args) -> Result<Value> {
+pub fn lib_println(args: Args, _block: &Block) -> Result<Value> {
     for v in args.iter() {
         println!("{}", v);
     }
     Ok(Value::Void(()))
 }
 
-pub fn lib_print(args: Args) -> Result<Value> {
+pub fn lib_print(args: Args, _block: &Block) -> Result<Value> {
     for v in args.iter() {
         println!("{}", v);
     }
     Ok(Value::Void(()))
 }
 
-pub fn lib_exit(_args: Args) -> Result<Value> {
+pub fn lib_exit(_args: Args, _block: &Block) -> Result<Value> {
     exit(0)
 }
 
-pub fn lib_sleep(args: Args) -> Result<Value> {
+pub fn lib_sleep(args: Args, _block: &Block) -> Result<Value> {
     if args.len() != 1 {
         return Err(anyhow!("Args Length Error: expect 1, found {}", args.len()));
     }
@@ -58,10 +59,15 @@ pub fn lib_sleep(args: Args) -> Result<Value> {
     }
 }
 
-pub fn lib_type(args: Args) -> Result<Value> {
+pub fn lib_type(args: Args, _block: &Block) -> Result<Value> {
     if args.len() != 1 {
         return Err(anyhow!("Args Length Error: expect 1, found {}", args.len()));
     }
     let value = &args[0];
     Ok(Value::Type(value.typ()))
+}
+
+pub fn lib_debug(_args: Args, block: &Block) -> Result<Value> {
+    println!("{:?}", block);
+    Ok(Value::Void(()))
 }

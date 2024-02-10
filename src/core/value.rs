@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, sync::Arc};
 
 use crate::vm::runtime::global::Meta;
 
@@ -54,8 +54,8 @@ impl Value {
 
 #[derive(Clone, PartialEq, Debug, PartialOrd)]
 pub enum Function {
-    NormalFunction(Block), // block name
-    MetaFunction(Meta),    // meta name
+    NormalFunction(Arc<Block>), // block name
+    MetaFunction(Meta),         // meta name
 }
 
 #[derive(
