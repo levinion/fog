@@ -12,17 +12,18 @@ pub enum GlobalItem {
     Block(Arc<Block>),
 }
 
-pub type Meta = fn(Args, block: &Block) -> Result<Value>;
+#[derive(Clone, Copy, PartialEq, PartialOrd, Debug)]
+pub struct Meta(pub fn(Args, &Block) -> Result<Value>);
 
 pub fn init_global_table() -> HashMap<String, GlobalItem> {
     let mut global: HashMap<String, GlobalItem> = HashMap::new();
-    global.insert("@println".to_string(), GlobalItem::Meta(lib_println));
-    global.insert("@print".to_string(), GlobalItem::Meta(lib_print));
-    global.insert("@exit".to_string(), GlobalItem::Meta(lib_exit));
-    global.insert("@sleep".to_string(), GlobalItem::Meta(lib_sleep));
-    global.insert("@type".to_string(), GlobalItem::Meta(lib_type));
-    global.insert("@debug".to_string(), GlobalItem::Meta(lib_debug));
-    global.insert("@sh".to_string(), GlobalItem::Meta(lib_sh));
+    global.insert("@println".to_string(), GlobalItem::Meta(Meta(lib_println)));
+    global.insert("@print".to_string(), GlobalItem::Meta(Meta(lib_print)));
+    global.insert("@exit".to_string(), GlobalItem::Meta(Meta(lib_exit)));
+    global.insert("@sleep".to_string(), GlobalItem::Meta(Meta(lib_sleep)));
+    global.insert("@type".to_string(), GlobalItem::Meta(Meta(lib_type)));
+    global.insert("@debug".to_string(), GlobalItem::Meta(Meta(lib_debug)));
+    global.insert("@sh".to_string(), GlobalItem::Meta(Meta(lib_sh)));
     global
 }
 

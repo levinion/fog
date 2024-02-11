@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::{anyhow, Result};
 
 use crate::core::{
@@ -48,7 +50,7 @@ impl Interpreter {
                     _ => invalid_type!(),
                 },
                 Value::String(s1) => match second_value {
-                    Value::String(s2) => Value::String(s1 + s2.as_str()),
+                    Value::String(s2) => Value::String(Arc::new(s1.to_string() + s2.as_str())),
                     _ => invalid_type!(),
                 },
                 Value::Type(t1) => match second_value {

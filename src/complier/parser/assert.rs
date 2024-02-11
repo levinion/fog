@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::core::{token::TokenVal, value::Type};
 
 use super::Parser;
@@ -41,7 +43,7 @@ impl Parser {
         }
     }
 
-    pub fn assert_next_name(&mut self) -> String {
+    pub fn assert_next_name(&mut self) -> Arc<String> {
         let token = self.stream.next();
         if let TokenVal::Name(s) = token.0.val.clone() {
             s

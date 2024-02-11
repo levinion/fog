@@ -55,7 +55,7 @@ impl Interpreter {
         let value = self.stack.pop_back().unwrap();
         let name = self.stack.pop_back().unwrap();
         if let Value::Name(s) = name {
-            self.local_table.insert(s, value);
+            self.local_table.insert(s.to_string(), value);
         } else {
             panic!("a name is needed! found: {:?}", name)
         }

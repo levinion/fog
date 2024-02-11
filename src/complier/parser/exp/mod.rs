@@ -1,4 +1,5 @@
 mod cal;
+mod lambda;
 
 use crate::core::{
     bytecode::ByteCode,
@@ -11,6 +12,9 @@ use super::Parser;
 
 impl Parser {
     pub fn load_exp(&mut self) -> Vec<ByteCode> {
+        if let TokenVal::ParL = self.stream.look_ahead(1).0.val {
+            return vec![self.load_lambda()];
+        }
         let mut codes = vec![];
         let output = self.handle_infix();
         let mut op_count: usize = 0; // count there is how many values on the stack

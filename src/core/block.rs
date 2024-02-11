@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 use crate::core::bytecode::ByteCode;
 
@@ -21,12 +21,17 @@ pub struct Block {
     pub name: String,
     pub full_name: String,
     pub path: PathBuf,
-    pub args: Vec<(String, Type)>,
+    pub args: Vec<(Arc<String>, Type)>,
     pub byte_codes: Vec<ByteCode>,
 }
 
 impl Block {
-    pub fn new(full_name: String, path: PathBuf, t: BlockType, args: Vec<(String, Type)>) -> Self {
+    pub fn new(
+        full_name: String,
+        path: PathBuf,
+        t: BlockType,
+        args: Vec<(Arc<String>, Type)>,
+    ) -> Self {
         let name = full_name.split("::").last().unwrap();
         Self {
             t,
@@ -43,7 +48,7 @@ impl Block {
         name: String,
         path: PathBuf,
         t: BlockType,
-        args: Vec<(String, Type)>,
+        args: Vec<(Arc<String>, Type)>,
     ) -> Self {
         let full_name = father.full_name.clone() + "::" + &name;
         Self {

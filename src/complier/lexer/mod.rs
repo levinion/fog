@@ -1,6 +1,9 @@
 mod coliner;
 pub mod token_stream;
-use std::io::prelude::{Read, Seek};
+use std::{
+    io::prelude::{Read, Seek},
+    sync::Arc,
+};
 
 use crate::core::{
     token::{Token, TokenVal},
@@ -56,9 +59,15 @@ impl<T: Read + Seek> Lexer<T> {
             '(' => token = TokenVal::ParL,
             ')' => token = TokenVal::ParR,
             '=' => {
-                token = self
-                    .coliner
-                    .check_next_char('=', TokenVal::Equal, TokenVal::Assign)
+                let sec_ch = self.coliner.read_char();
+                match sec_ch {
+                    '=' => token = TokenVal::Equal,
+                    '>' => token = TokenVal::RightArror,
+                    _ => {
+                        self.coliner.put_char_back();
+                        token = TokenVal::Assign;
+                    }
+                }
             }
             '!' => {
                 token = self
@@ -134,7 +143,9 @@ impl<T: Read + Seek> Lexer<T> {
             "bool" => TokenVal::Type(Type::Bool),
             "type" => TokenVal::Type(Type::Type),
             "func" => TokenVal::Type(Type::Function),
-            _ => TokenVal::Name(s),
+            "for" => TokenVal::For,
+            "return" => TokenVal::Return,
+            _ => TokenVal::Name(Arc::new(s)),
         }
     }
 
@@ -157,7 +168,7 @@ impl<T: Read + Seek> Lexer<T> {
                 _ => s.push(ch),
             }
         }
-        TokenVal::String(s)
+        TokenVal::String(Arc::new(s))
     }
 
     /// read number

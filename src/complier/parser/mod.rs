@@ -1,8 +1,12 @@
 mod assert;
 mod control_flow;
 mod exp;
+mod func;
 
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use crate::{
     complier::lexer::token_stream::TokenStream,
@@ -10,7 +14,6 @@ use crate::{
         block::{Block, BlockType},
         bytecode::ByteCode,
         token::TokenVal,
-        value::Type,
         value::Value,
     },
 };
@@ -67,7 +70,7 @@ impl Parser {
         let (possible_path1_exists, r1) = {
             let mut path = path.to_path_buf();
             path.set_extension("");
-            let dir_name = path.join(&name);
+            let dir_name = path.join(&*name);
             let filename = path.join("mod.fog");
             (
                 dir_name.is_dir() && filename.is_file(),
@@ -104,37 +107,14 @@ impl Parser {
                 self.stream.next();
                 let name = self.assert_next_name();
                 let args = self.parse_fn_args_to_vec();
-                let mut block = Block::inherite(father, name, path, BlockType::Fn, args.clone());
+                let mut block =
+                    Block::inherite(father, name.to_string(), path, BlockType::Fn, args.clone());
                 block.args = args;
                 block.byte_codes.append(&mut self.parse_bucket());
                 block
             }
             token => panic!("invalid block! found token: {token:?}"),
         }
-    }
-
-    /// This function is used by parse_blocks.
-    /// It should not be used in other position.
-    /// eg: fn test(a:type,b:type){...} -> get \[("a",type),("b",type)\]
-    fn parse_fn_args_to_vec(&mut self) -> Vec<(String, Type)> {
-        let mut args = vec![];
-        self.assert_next(TokenVal::ParL);
-        loop {
-            let token = self.stream.look_ahead(1);
-            match token.0.val.clone() {
-                TokenVal::Name(name) => {
-                    self.stream.next();
-                    self.assert_next(TokenVal::Colon);
-                    let typ = self.assert_next_type();
-                    args.push((name, typ));
-                }
-                TokenVal::ParR => break,
-                TokenVal::Comma => self.assert_next(TokenVal::Comma),
-                _ => panic!("invalid token!"),
-            }
-        }
-        self.assert_next(TokenVal::ParR);
-        args
     }
 
     /// This function is used by parse_blocks.
@@ -153,15 +133,33 @@ impl Parser {
                     match token.0.val {
                         TokenVal::Assign => codes.append(&mut self.assign_local()),
                         TokenVal::ParL => codes.append(&mut self.call_function()),
-                        _ => todo!(),
+                        TokenVal::Dot => codes.append(&mut self.call_method(true, true)),
+                        _ => panic!("unreachable! found: {:?}", token),
                     }
                 }
+                TokenVal::Dot => codes.append(&mut self.call_method(false, false)),
                 TokenVal::Let => codes.append(&mut self.define_local()),
                 TokenVal::If => codes.append(&mut self.parse_if()), //self.enter_if(block),
                 TokenVal::Fog => codes.append(&mut self.fog_call_function()),
                 TokenVal::Eos => panic!("eos!"),
                 TokenVal::CurlyR => break,
                 TokenVal::Assign => codes.append(&mut self.assign_local()),
+                TokenVal::For => codes.append(&mut self.parse_for()),
+                TokenVal::Return => codes.append(&mut self.parse_return()),
+                TokenVal::Int(_)
+                | TokenVal::String(_)
+                | TokenVal::Float(_)
+                | TokenVal::Bool(_)
+                | TokenVal::Type(_) => {
+                    let token = self.stream.look_ahead(2);
+                    match token.0.val {
+                        TokenVal::Dot => codes.append(&mut self.call_method(true, false)),
+                        _ => panic!("unreachable! found: {:?}", token),
+                    }
+                }
+                TokenVal::SemiColon => {
+                    self.stream.next();
+                }
                 _ => panic!("unexpected token: {:?}", token),
             }
         }
@@ -169,62 +167,10 @@ impl Parser {
         codes
     }
 
-    fn load_name(&mut self, name: String) -> ByteCode {
+    fn load_name(&mut self, name: Arc<String>) -> ByteCode {
         let value = Value::Name(name);
         ByteCode::LoadValue(value)
     }
-
-    /// call normal function with name
-    /// eg: print(a, b);
-    fn call_function(&mut self) -> Vec<ByteCode> {
-        let mut codes = vec![];
-        let name = self.assert_next_name();
-        codes.push(self.load_name(name));
-        self.assert_next(TokenVal::ParL);
-        codes.push(ByteCode::LoadName);
-        // get args
-        let (mut c, argc) = self.load_exps();
-        codes.append(&mut c);
-        self.assert_next(TokenVal::ParR);
-        self.assert_next(TokenVal::SemiColon);
-        // call function
-        codes.push(ByteCode::CallFunction(argc));
-        codes
-    }
-
-    fn fog_call_function(&mut self) -> Vec<ByteCode> {
-        let mut codes = vec![];
-        self.stream.next();
-        let name = self.assert_next_name();
-        codes.push(self.load_name(name));
-        self.assert_next(TokenVal::ParL);
-        codes.push(ByteCode::LoadName);
-        let (mut c, argc) = self.load_exps();
-        codes.append(&mut c);
-        self.assert_next(TokenVal::ParR);
-        self.assert_next(TokenVal::SemiColon);
-        codes.push(ByteCode::FogCallFunction(argc));
-        codes
-    }
-
-    // eg: value.method(exps);
-    // fn call_method(&mut self, block: &mut Block) {
-    //     let name = self.assert_next_name();
-    //     self.load_name(block, name);
-    //     block.byte_codes.push(ByteCode::LoadName);
-    //     self.assert_next(TokenVal::Dot);
-    //     // get method name
-    //     let name = self.assert_next_name();
-    //     block
-    //         .byte_codes
-    //         .push(ByteCode::LoadValue(Value::String(name)));
-    //     self.assert_next(TokenVal::ParL);
-    //     // get args
-    //     let argc = self.load_exps(block);
-    //     self.assert_next(TokenVal::ParR);
-    //     self.assert_next(TokenVal::SemiColon);
-    //     block.byte_codes.push(ByteCode::CallMethod(argc));
-    // }
 
     /// define a local variable
     /// eg: let a = "hello world";

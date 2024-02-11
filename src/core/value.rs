@@ -2,19 +2,21 @@ use std::{fmt::Display, sync::Arc};
 
 use crate::vm::runtime::global::Meta;
 
-use super::block::Block;
+use super::{
+    block::Block,
+    token::{Token, TokenVal},
+};
 
 pub type Args = Vec<Value>;
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, serde::Deserialize, serde::Serialize)]
 pub enum Value {
-    String(String),
-    Name(String),
+    String(Arc<String>),
+    Name(Arc<String>),
     Type(Type),
     Bool(bool),
     Int(i64),
     Float(f64),
-    #[serde(skip)]
     Function(Function),
     Void(()),
 }
@@ -52,10 +54,24 @@ impl Value {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, PartialOrd)]
+impl From<Token> for Value {
+    fn from(value: Token) -> Self {
+        match value.0.val.clone() {
+            TokenVal::Name(v) => Value::Name(v),
+            TokenVal::String(v) => Value::String(v),
+            TokenVal::Bool(v) => Value::Bool(v),
+            TokenVal::Int(v) => Value::Int(v),
+            TokenVal::Float(v) => Value::Float(v),
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Debug, PartialOrd, serde::Serialize, serde::Deserialize)]
 pub enum Function {
-    NormalFunction(Arc<Block>), // block name
-    MetaFunction(Meta),         // meta name
+    NormalFunction(Arc<Block>), // a normal func is a block
+    #[serde(skip)]
+    MetaFunction(Meta), // meta name -> meta func
 }
 
 #[derive(

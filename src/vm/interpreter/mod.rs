@@ -33,15 +33,17 @@ impl Interpreter {
 
     #[async_recursion::async_recursion]
     // args: args read by caller
-    pub async fn execute(&mut self, block: Arc<Block>, args: Args) -> Result<()> {
+    pub async fn execute(&mut self, block: Arc<Block>, args: Args) -> Result<Value> {
         // handle args here
         block
             .args
             .iter()
             .zip(args.into_iter())
             .for_each(|(name, arg)| {
-                self.local_table.insert(name.0.clone(), arg);
+                self.local_table.insert(name.0.to_string(), arg);
             });
+
+        let mut r = None;
 
         while let Some(code) = self.go_ahead(&block) {
             match code.clone() {
@@ -51,7 +53,6 @@ impl Interpreter {
                 ByteCode::FogCallFunction(argc) => {
                     self.fog_call_function(argc, Arc::clone(&block)).await?
                 }
-                ByteCode::CallMethod(argc) => self.call_method(argc)?,
                 ByteCode::LoadValue(value) => self.load_value(value),
                 ByteCode::StoreLocal => self.store_local(),
                 ByteCode::LoadName => self.load_name(&block).await?,
@@ -59,12 +60,14 @@ impl Interpreter {
                 ByteCode::BinaryOP(op) => self.binary_op(op)?,
                 ByteCode::JumpIfFalse(n) => self.jump_if_false(n),
                 ByteCode::Jump(n) => self.jump(n),
-                // ByteCode::Decorate(_) => {
-                //     panic!("decorate should be optimized!")
-                // }
+                ByteCode::Return => {
+                    let v = self.stack.pop_back().unwrap();
+                    r = Some(v);
+                    break;
+                }
             }
         }
-        Ok(())
+        Ok(r.unwrap_or(Value::Void(())))
     }
 
     fn go_ahead<'a>(&'a mut self, block: &'a Block) -> Option<&ByteCode> {

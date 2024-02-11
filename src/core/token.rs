@@ -1,4 +1,4 @@
-use std::{fmt::Display, rc::Rc};
+use std::{fmt::Display, rc::Rc, sync::Arc};
 
 use super::{op::InfixBinaryOP, value::Type};
 
@@ -56,39 +56,42 @@ impl _Token {
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum TokenVal {
-    String(String), // "string"
-    Name(String),   // constant/variable name
-    ParL,           // (
-    ParR,           // )
-    Eos,            // end of input
-    Let,            // let: define a variable
-    Assign,         // =
-    Equal,          // ==
-    NotEq,          // !=
-    Greater,        // >
-    Less,           // <
-    GreEq,          // >=
-    LesEq,          // <=
-    Comma,          // ,
-    Bool(bool),     // true or false
-    If,             // if
-    Else,           // else
-    CurlyL,         // {
-    CurlyR,         // }
-    Int(i64),       // 1
-    Float(f64),     // 1.0
-    Sub,            // -
-    Add,            // +
-    Mul,            // *
-    Div,            // /
-    Excl,           // !
-    SemiColon,      // ;
-    Fn,             // fn
-    Fog,            // fog
-    Dot,            // .
-    Colon,          // :
-    Import,         // import
-    Use,            // use
+    String(Arc<String>), // "string"
+    Name(Arc<String>),   // constant/variable name
+    ParL,                // (
+    ParR,                // )
+    Eos,                 // end of input
+    Let,                 // let: define a variable
+    Assign,              // =
+    Equal,               // ==
+    NotEq,               // !=
+    Greater,             // >
+    Less,                // <
+    GreEq,               // >=
+    LesEq,               // <=
+    Comma,               // ,
+    Bool(bool),          // true or false
+    If,                  // if
+    Else,                // else
+    CurlyL,              // {
+    CurlyR,              // }
+    Int(i64),            // 1
+    Float(f64),          // 1.0
+    Sub,                 // -
+    Add,                 // +
+    Mul,                 // *
+    Div,                 // /
+    Excl,                // !
+    SemiColon,           // ;
+    Fn,                  // fn
+    Fog,                 // fog
+    Dot,                 // .
+    Colon,               // :
+    Import,              // import
+    Use,                 // use
+    For,                 // loop
+    RightArror,          // =>
+    Return,              // return
     Type(Type),
 }
 

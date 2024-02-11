@@ -9,11 +9,11 @@ pub enum ByteCode {
     // Decorate(Decorate),
     CallFunction(usize), // argc
     FogCallFunction(usize),
-    CallMethod(usize),
     LoadValue(Value),
     StoreLocal,
     JumpIfFalse(isize),
     Jump(isize),
+    Return,
     UnaryOP(UnaryOP),
     BinaryOP(BinaryOP),
 }
